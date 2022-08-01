@@ -38,10 +38,10 @@ namespace xint {
             unsigned shift = b_zeros - countl_zero(a);
             uint<Bits, Safe> sb = b << shift;
 
-            if (eval_sub_inplace(a.limbs, sb.limbs)) {
+            if (eval_sub_inplace(a.limbs(), sb.limbs())) {
                 --shift;
                 sb = b << shift;
-                eval_add_inplace(a.limbs, sb.limbs);
+                eval_add_inplace(a.limbs(), sb.limbs());
             }
             /*
              * This is a more efficient version of
@@ -50,7 +50,7 @@ namespace xint {
             const auto limb_shift = shift / limb_bits;
             const auto bit_shift = shift % limb_bits;
             const limb_type x = 1u << bit_shift;
-            bool o = eval_add_inplace_limb(q.limbs | std::views::drop(limb_shift),
+            bool o = eval_add_inplace_limb(q.limbs() | std::views::drop(limb_shift),
                                            x);
             assert(!o);
         }
@@ -76,41 +76,41 @@ namespace xint {
         uint<Bits, Safe> q = 0;
         bool a_neg = false;
 
-        unsigned shift = size(a.limbs);
+        unsigned shift = size(a.limbs());
 
         while (shift-- > 0) {
-            auto cmp = eval_compare_three_way_limb(a.limbs, b, shift);
+            auto cmp = eval_compare_three_way_limb(a.limbs(), b, shift);
             if (cmp < 0)
                 continue;
 
-            wide_limb_type top_a = a.limbs[shift];
-            if (shift + 1 < size(a.limbs))
-                top_a |= wide_limb_type{a.limbs[shift + 1]} << limb_bits;
+            wide_limb_type top_a = a.limb(shift);
+            if (shift + 1 < size(a.limbs()))
+                top_a |= wide_limb_type{a.limb(shift + 1)} << limb_bits;
 
             wide_limb_type factor = top_a / b;
             assert((factor >> limb_bits) == 0);
 
             uint<2*limb_bits, Safe> d = static_cast<wide_limb_type>(factor * b);
             bool d_neg = a_neg;
-            if (eval_sub_inplace(a.limbs | drop(shift),
-                                 d.limbs)) {
+            if (eval_sub_inplace(a.limbs() | drop(shift),
+                                 d.limbs())) {
                 a_neg = !a_neg;
                 a = -a;
             }
 
             if (d_neg)
-                eval_sub_inplace_limb(q.limbs | drop(shift), factor);
+                eval_sub_inplace_limb(q.limbs() | drop(shift), factor);
             else
-                eval_add_inplace_limb(q.limbs | drop(shift), factor);
+                eval_add_inplace_limb(q.limbs() | drop(shift), factor);
         }
 
         if (a_neg) {
             a = -a;
-            eval_add_inplace_limb(a.limbs, b);
+            eval_add_inplace_limb(a.limbs(), b);
             --q;
         }
 
-        return {q, a.limbs.front()};
+        return {q, a.limb(0)};
     }
 
 

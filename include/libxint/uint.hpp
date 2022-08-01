@@ -13,13 +13,21 @@
 #include <limits>
 #include <ranges>
 #include <string>
-#include <utility> // pair
 
 #include "types.hpp"
 #include "utils.hpp"
+#include "storage.hpp"
+
+
+#ifndef XINT_ALIGNMENT
+#define XINT_ALIGNMENT 32
+#endif
 
 
 namespace xint {
+
+    template<typename T, std::size_t N>
+    struct alignas(XINT_ALIGNMENT) aligned_array : public std::array<T, N> {};
 
 
     template<unsigned Bits,
@@ -32,23 +40,32 @@ namespace xint {
         static inline constexpr std::size_t num_limbs = (Bits-1)/limb_bits + 1;
         static inline constexpr std::size_t num_bytes = num_limbs * sizeof(limb_type);
 
+        using storage_type = auto_storage<aligned_array<limb_type, num_limbs>>;
+        static inline constexpr bool is_local = storage_type::is_local;
 
-        std::array<limb_type, num_limbs> limbs;
+        using array_type = storage_type::data_type;
 
+        storage_type data;
+
+        constexpr const array_type& limbs() const noexcept { return *data; }
+        constexpr       array_type& limbs()       noexcept { return *data; }
+
+        constexpr const limb_type& limb(std::size_t idx) const noexcept { return limbs()[idx]; }
+        constexpr       limb_type& limb(std::size_t idx)       noexcept { return limbs()[idx]; }
 
         // constructors
-        constexpr uint() noexcept = default;
+        constexpr uint() noexcept(is_local) = default;
 
-        constexpr uint(const uint&) noexcept = default;
-        constexpr uint(uint&&) noexcept = default;
+        constexpr uint(const uint&) noexcept(is_local) = default;
+        constexpr uint(uint&&) noexcept(is_local) = default;
 
         template<unsigned Bits2>
-        requires (Bits != Bits2)
-        uint(const uint<Bits2, Safe>&) noexcept(!Safe);
+        requires(Bits != Bits2)
+        uint(const uint<Bits2, Safe>&) noexcept(!Safe && is_local);
 
 
         template<std::integral I>
-        uint(I sval) noexcept(!Safe);
+        uint(I sval) noexcept(!Safe && is_local);
 
         // note: base must be a valid argument for std::stoul()
         explicit uint(const std::string& arg, unsigned base = 0);
@@ -58,7 +75,7 @@ namespace xint {
         uint& operator =(uint&&) noexcept = default;
 
         template<unsigned Bits2>
-        requires (Bits != Bits2)
+        requires(Bits != Bits2)
         uint& operator =(const uint<Bits2, Safe>& other) noexcept(!Safe);
 
 
@@ -70,13 +87,14 @@ namespace xint {
 
         // conversion: may throw std::overflow_error if Safe
         template<std::unsigned_integral U>
-        explicit operator U() const noexcept(!Safe);
+        explicit operator U() const noexcept(!Safe && is_local);
 
         template<unsigned DestBits>
         utils::uint_t<DestBits> to_uint() const noexcept(!Safe || DestBits >= Bits);
 
         template<unsigned NewBits>
-        uint<NewBits, Safe> cast() const noexcept(!Safe || NewBits >= Bits);
+        uint<NewBits, Safe> cast() const
+            noexcept((!Safe || NewBits >= Bits) && uint<NewBits, Safe>::is_local);
 
 
         explicit operator bool() const noexcept;

@@ -12,6 +12,7 @@ xint_HEADERS = \
 	eval-io.hpp \
 	eval-subtraction.hpp \
 	stdlib.hpp \
+	storage.hpp \
 	types.hpp \
 	uint-casting.hpp \
 	uint-constructors.hpp \

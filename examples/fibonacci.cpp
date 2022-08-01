@@ -1,29 +1,35 @@
 #include <iostream>
 #include <stdexcept>
-#include <utility>
 
 #include <libxint/uint.hpp>
 
 
 using std::cout;
+using std::dec;
 using std::endl;
+using std::hex;
 
 
 void print_fibo()
 {
     unsigned i = 0;
-    xint::uint<4096, true> a = 1, b = 0;
+    xint::uint<8192, true> a = 1, b = 0, c = b;
     try {
         for (;; ++i) {
-            cout << i << ": " << b << "\n";
-            auto c = a + b;
-            a = std::move(b);
-            b = std::move(c);
+            //cout << i << ": " << hex << b << dec << "\n";
+            c += a;
+            a = b;
+            b = c;
         }
     }
     catch (std::overflow_error&) {
         cout << "stopped due to overflow" << endl;
     }
+    cout << i << ": " << hex << b << dec <<endl;
+
+    swap(a, b);
+    cout << a << endl;
+    cout << b << endl;
 }
 
 

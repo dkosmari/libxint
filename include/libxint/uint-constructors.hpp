@@ -20,9 +20,9 @@ namespace xint {
     template<unsigned Bits2>
     requires (Bits != Bits2)
     uint<Bits, Safe>::uint(const uint<Bits2, Safe>& other)
-        noexcept(!Safe)
+        noexcept(!Safe && is_local)
     {
-        bool overload = eval_assign(limbs, other.limbs);
+        bool overload = eval_assign(limbs(), other.limbs());
         if constexpr (Safe)
             if (overload)
                 throw std::overflow_error{"assignment overflow"};
@@ -33,14 +33,16 @@ namespace xint {
     template<unsigned Bits, bool Safe>
     template<std::integral I>
     uint<Bits, Safe>::uint(I sval)
-        noexcept(!Safe)
+        noexcept(!Safe && is_local)
     {
+        using std::begin;
         using U = std::make_unsigned_t<I>;
+
         constexpr auto U_bits = std::numeric_limits<U>::digits;
         U uval = sval;
-        auto out = limbs.begin();
+        auto out = begin(limbs());
         while (uval) {
-            if (out == limbs.end()) {
+            if (out == end(limbs())) {
                 if constexpr (Safe)
                     throw std::out_of_range{"initializer is too large"};
                 else
@@ -52,7 +54,7 @@ namespace xint {
             else // guaranteed to have consumed the whole input
                 break;
         }
-        std::fill(out, limbs.end(), 0);
+        std::fill(out, end(limbs()), 0);
     }
 
 
@@ -65,7 +67,7 @@ namespace xint {
         if (arg.empty())
             throw std::invalid_argument{"argument string is empty"};
 
-        std::ranges::fill(limbs, 0);
+        std::ranges::fill(limbs(), 0);
 
         if (arg == "0")
             return;
@@ -94,15 +96,15 @@ namespace xint {
                 throw std::overflow_error{"too_large && c != '0'"};
 
             limb_type d = static_cast<limb_type>(std::stoul(std::string{c}, nullptr, base));
-            if (eval_mul_limb(x.limbs,
-                              multiplier.limbs,
+            if (eval_mul_limb(x.limbs(),
+                              multiplier.limbs(),
                               d))
                 throw std::overflow_error{"overflow in eval_mul_limb()"};
 
-            if (eval_add_inplace(limbs, x.limbs))
+            if (eval_add_inplace(limbs(), x.limbs()))
                 throw std::overflow_error{"overflow in eval_add_inplace()"};
 
-            if (eval_mul_inplace_limb(multiplier.limbs, base))
+            if (eval_mul_inplace_limb(multiplier.limbs(), base))
                 too_large = true;
         }
     }

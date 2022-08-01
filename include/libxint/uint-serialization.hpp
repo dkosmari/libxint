@@ -23,7 +23,7 @@ namespace xint {
         std::string result;
         result.reserve(Bits);
         for (unsigned i = Bits; i > 0; --i) {
-            bool v = eval_bit_get(limbs, i - 1);
+            bool v = eval_bit_get(limbs(), i - 1);
             // don't start with a zero
             if (result.empty() && !v)
                 continue;
@@ -40,7 +40,7 @@ namespace xint {
     uint<Bits, Safe>::to_dec()
         const
     {
-        if (utils::is_zero(limbs))
+        if (utils::is_zero(limbs()))
             return "0";
 
         static const char digits[10 + 1] = "0123456789";
@@ -61,12 +61,13 @@ namespace xint {
     uint<Bits, Safe>::to_hex(bool upper)
         const
     {
+        using std::size;
         static const unsigned char digits[16 + 1] = "0123456789abcdef";
         std::string result;
         result.reserve(Bits / 4);
-        for (unsigned i = limbs.size() - 1; i + 1 > 0; --i) {
+        for (unsigned i = size(limbs()) - 1; i + 1 > 0; --i) {
             for (unsigned j = limb_bits / 4 - 1; j + 1 > 0; --j) {
-                auto nibble = limbs[i] >> j * 4 & 0xf;
+                auto nibble = limb(i) >> j * 4 & 0xf;
                 // don't start with a zero
                 if (result.empty() && nibble == 0)
                     continue;
@@ -90,7 +91,7 @@ namespace xint {
 
         unsigned v = 0;
         for (unsigned i = Bits-1; i + 1 > 0; --i) {
-            v = v << 1 | eval_bit_get(limbs, i);
+            v = v << 1 | eval_bit_get(limbs(), i);
             if (i % 3 == 0) {
                 // don't start with a zero
                 if (!result.empty() || v != 0)
@@ -115,7 +116,7 @@ namespace xint {
         if (base > 36)
             throw std::invalid_argument{"base must be <= 36"};
 
-        if (utils::is_zero(limbs))
+        if (utils::is_zero(limbs()))
             return "0";
 
         static const unsigned char digits[36 + 1] =
@@ -144,7 +145,7 @@ namespace xint {
         const
     {
         auto out = begin(buffer);
-        for (limb_type x : limbs)
+        for (limb_type x : limbs())
             for (unsigned i = 0; i < sizeof(limb_type); ++i) {
                 if (out == end(buffer))
                     throw std::out_of_range{"buffer is not large enough"};
@@ -161,7 +162,7 @@ namespace xint {
         const
     {
         auto out = begin(buffer);
-        for (limb_type x : limbs | std::views::reverse)
+        for (limb_type x : limbs() | std::views::reverse)
             for (unsigned i = 0; i < sizeof(limb_type); ++i) {
                 if (out == end(buffer))
                     throw std::out_of_range{"buffer is not large enough"};

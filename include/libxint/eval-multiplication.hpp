@@ -68,8 +68,8 @@ namespace xint {
         }
 
         wide_limb_t sum = 0;
-        for (std::size_t i = 0; i < out.size(); ++i) {
-            if (i < a.size())
+        for (std::size_t i = 0; i < size(out); ++i) {
+            if (i < size(a))
                 sum += a[i] * wide_limb_t{b};
             out[i] = static_cast<limb_t>(sum);
             sum >>= limb_width;

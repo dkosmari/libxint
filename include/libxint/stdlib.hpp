@@ -15,6 +15,15 @@
 namespace xint {
 
 
+    template<unsigned Bits, bool Safe1, bool Safe2>
+    void swap(uint<Bits, Safe1>& a,
+              uint<Bits, Safe2>& b)
+        noexcept
+    {
+        swap(a.data, b.data);
+    }
+
+
     template<unsigned Bits, bool Safe>
     std::string
     to_string(const uint<Bits, Safe>& a)
@@ -30,7 +39,7 @@ namespace xint {
         noexcept
     {
         bool found = false;
-        for (auto d : x.limbs) {
+        for (auto d : x.limbs()) {
             if (std::has_single_bit(x)) {
                 if (found)
                     return false;
@@ -55,7 +64,7 @@ namespace xint {
             return x;
         uint<Bits, Safe> y = 0;
         const unsigned top_bit = Bits - countl_zero(x);
-        assert(top_bit + 1 < y.limbs.size());
+        assert(top_bit + 1 < size(y.limbs()));
         y.bit(top_bit + 1, true);
         return y;
     }
@@ -122,7 +131,7 @@ namespace xint {
     countl_zero(const uint<Bits, Safe>& x)
         noexcept
     {
-        return eval_bit_countl_zero(x.limbs);
+        return eval_bit_countl_zero(x.limbs());
     }
 
 
@@ -131,7 +140,7 @@ namespace xint {
     countl_one(const uint<Bits, Safe>& x)
         noexcept
     {
-        return eval_bit_countl_one(x.limbs);
+        return eval_bit_countl_one(x.limbs());
     }
 
 
@@ -140,7 +149,7 @@ namespace xint {
     countr_zero(const uint<Bits, Safe>& x)
         noexcept
     {
-        return eval_bit_countr_zero(x.limbs);
+        return eval_bit_countr_zero(x.limbs());
     }
 
 
@@ -149,7 +158,7 @@ namespace xint {
     countr_one(const uint<Bits, Safe>& x)
         noexcept
     {
-        return eval_bit_countr_one(x.limbs);
+        return eval_bit_countr_one(x.limbs());
     }
 
 
@@ -158,7 +167,7 @@ namespace xint {
     popcount(const uint<Bits, Safe>& x)
         noexcept
     {
-        return eval_bit_popcount(x.limbs);
+        return eval_bit_popcount(x.limbs());
     }
 
 
@@ -168,8 +177,6 @@ namespace xint {
         uint<Bits, Safe> b)
         noexcept(!Safe)
     {
-        using std::swap;
-
         // this is Stein's binary GCD algorithm
         if (!a)
             return b;

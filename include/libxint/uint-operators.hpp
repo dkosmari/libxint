@@ -43,7 +43,7 @@ namespace xint {
     uint<Bits, Safe>::operator =(const uint<Bits2, Safe>& other)
         noexcept(!Safe)
     {
-        bool overflow = eval_assign(limbs, other.limbs);
+        bool overflow = eval_assign(limbs(), other.limbs());
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in ="};
@@ -61,7 +61,7 @@ namespace xint {
                 const uint<Bits2, Safe2>& b)
         noexcept(!Safe1)
     {
-        bool overflow = eval_add_inplace(a.limbs, b.limbs);
+        bool overflow = eval_add_inplace(a.limbs(), b.limbs());
         if constexpr (Safe1)
             if (overflow)
                 throw std::overflow_error{"overflow in +="};
@@ -90,7 +90,7 @@ namespace xint {
                 const uint<Bits2, Safe2>& b)
         noexcept(!Safe1)
     {
-        bool overflow = eval_sub_inplace(a.limbs, b.limbs);
+        bool overflow = eval_sub_inplace(a.limbs(), b.limbs());
         if constexpr (Safe1)
             if (overflow)
                 throw std::overflow_error{"overflow in -="};
@@ -119,7 +119,7 @@ namespace xint {
         noexcept(!Safe)
     {
         uint<Bits, Safe> c;
-        bool overflow = eval_mul_simple(c.limbs, a.limbs, b.limbs);
+        bool overflow = eval_mul_simple(c.limbs(), a.limbs(), b.limbs());
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in *="};
@@ -172,7 +172,7 @@ namespace xint {
                 const uint<Bits, Safe>& b)
         noexcept
     {
-        eval_bit_and(a.limbs, a.limbs, b.limbs);
+        eval_bit_and(a.limbs(), a.limbs(), b.limbs());
         return a;
     }
 
@@ -186,7 +186,7 @@ namespace xint {
                 const uint<Bits, Safe>& b)
         noexcept
     {
-        eval_bit_or(a.limbs, a.limbs, b.limbs);
+        eval_bit_or(a.limbs(), a.limbs(), b.limbs());
         return a;
     }
 
@@ -198,7 +198,7 @@ namespace xint {
                 const uint<Bits, Safe>& b)
         noexcept
     {
-        eval_bit_xor(a.limbs, a.limbs, b.limbs);
+        eval_bit_xor(a.limbs(), a.limbs(), b.limbs());
         return a;
     }
 
@@ -210,7 +210,7 @@ namespace xint {
                  unsigned b)
         noexcept (!Safe)
     {
-        bool overflow = eval_bit_shift_left<Safe>(a.limbs, a.limbs, b);
+        bool overflow = eval_bit_shift_left<Safe>(a.limbs(), a.limbs(), b);
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in <<="};
@@ -225,7 +225,7 @@ namespace xint {
                  unsigned b)
         noexcept(!Safe)
     {
-        bool overflow = eval_bit_shift_right<Safe>(a.limbs, a.limbs, b);
+        bool overflow = eval_bit_shift_right<Safe>(a.limbs(), a.limbs(), b);
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in >>="};
@@ -245,7 +245,7 @@ namespace xint {
     operator ++(uint<Bits, Safe>& a)
         noexcept(!Safe)
     {
-        bool overflow = eval_increment(a.limbs);
+        bool overflow = eval_increment(a.limbs());
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in ++"};
@@ -259,7 +259,7 @@ namespace xint {
     operator --(uint<Bits, Safe>& a)
         noexcept(!Safe)
     {
-        bool overflow = eval_decrement(a.limbs);
+        bool overflow = eval_decrement(a.limbs());
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in --"};
@@ -274,7 +274,7 @@ namespace xint {
         noexcept(!Safe)
     {
         uint<Bits, Safe> b;
-        bool overflow = eval_increment(a.limbs, b.limbs);
+        bool overflow = eval_increment(a.limbs(), b.limbs());
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in ++"};
@@ -289,7 +289,7 @@ namespace xint {
         noexcept(!Safe)
     {
         uint<Bits, Safe> b;
-        bool overflow = eval_decrement(a.limbs, b.limbs);
+        bool overflow = eval_decrement(a.limbs(), b.limbs());
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in --"};
@@ -319,8 +319,8 @@ namespace xint {
     operator -(uint<Bits, Safe> a)
         noexcept
     {
-        eval_bit_flip_inplace(a.limbs);
-        eval_increment(a.limbs);
+        eval_bit_flip_inplace(a.limbs());
+        eval_increment(a.limbs());
         return a;
     }
 
@@ -333,9 +333,9 @@ namespace xint {
         noexcept(!Safe)
     {
         uint<Bits, Safe> result;
-        bool overflow = eval_add(result.limbs,
-                                 a.limbs,
-                                 b.limbs);
+        bool overflow = eval_add(result.limbs(),
+                                 a.limbs(),
+                                 b.limbs());
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in +"};
@@ -351,9 +351,9 @@ namespace xint {
         noexcept(!Safe)
     {
         uint<Bits, Safe> result;
-        bool underflow = eval_sub(result.limbs,
-                                  a.limbs,
-                                  b.limbs);
+        bool underflow = eval_sub(result.limbs(),
+                                  a.limbs(),
+                                  b.limbs());
         if constexpr (Safe)
             if (underflow)
                 throw std::overflow_error{"overflow in -"};
@@ -369,9 +369,9 @@ namespace xint {
         noexcept(!Safe)
     {
         uint<Bits, Safe> result;
-        bool overflow = eval_mul_simple(result.limbs,
-                                        a.limbs,
-                                        b.limbs);
+        bool overflow = eval_mul_simple(result.limbs(),
+                                        a.limbs(),
+                                        b.limbs());
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in *"};
@@ -386,8 +386,8 @@ namespace xint {
         noexcept(!Safe)
     {
         uint<Bits, Safe> result;
-        bool overflow = eval_mul_limb(result.limbs,
-                                      a.limbs,
+        bool overflow = eval_mul_limb(result.limbs(),
+                                      a.limbs(),
                                       b);
         if constexpr (Safe)
             if (overflow)
@@ -403,8 +403,8 @@ namespace xint {
         noexcept(!Safe)
     {
         uint<Bits, Safe> result;
-        bool overflow = eval_mul_limb(result.limbs,
-                                      b.limbs,
+        bool overflow = eval_mul_limb(result.limbs(),
+                                      b.limbs(),
                                       a);
         if constexpr (Safe)
             if (overflow)
@@ -462,7 +462,7 @@ namespace xint {
         noexcept
     {
         uint<Bits, Safe> c;
-        eval_bit_and(c.limbs, a.limbs, b.limbs);
+        eval_bit_and(c.limbs(), a.limbs(), b.limbs());
     }
 
 
@@ -474,7 +474,7 @@ namespace xint {
         noexcept
     {
         uint<Bits, Safe> c;
-        eval_bit_or(c.limbs, a.limbs, b.limbs);
+        eval_bit_or(c.limbs(), a.limbs(), b.limbs());
     }
 
 
@@ -486,7 +486,7 @@ namespace xint {
         noexcept
     {
         uint<Bits, Safe> c;
-        eval_bit_xor(c.limbs, a.limbs, b.limbs);
+        eval_bit_xor(c.limbs(), a.limbs(), b.limbs());
     }
 
 
@@ -498,7 +498,7 @@ namespace xint {
         noexcept(!Safe)
     {
         uint<Bits, Safe> c;
-        bool overflow = eval_bit_shift_left<Safe>(c.limbs, a.limbs, b);
+        bool overflow = eval_bit_shift_left<Safe>(c.limbs(), a.limbs(), b);
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in <<"};
@@ -514,7 +514,7 @@ namespace xint {
         noexcept(!Safe)
     {
         uint<Bits, Safe> c;
-        bool overflow = eval_bit_shift_right<Safe>(c.limbs, a.limbs, b);
+        bool overflow = eval_bit_shift_right<Safe>(c.limbs(), a.limbs(), b);
         if constexpr (Safe)
             if (overflow)
                 throw std::overflow_error{"overflow in >>"};
@@ -534,7 +534,7 @@ namespace xint {
                 const uint<Bits, Safe2>& b)
         noexcept
     {
-        return a.limbs == b.limbs;
+        return a.limbs() == b.limbs();
     }
 
 
@@ -546,7 +546,7 @@ namespace xint {
                 const uint<Bits2, Safe2>& b)
         noexcept
     {
-        return eval_compare_equal(a.limbs, b.limbs);
+        return eval_compare_equal(a.limbs(), b.limbs());
     }
 
 
@@ -579,7 +579,7 @@ namespace xint {
                  const uint<Bits2, Safe2>& b)
         noexcept
     {
-        return eval_compare_three_way(a.limbs, b.limbs);
+        return eval_compare_three_way(a.limbs(), b.limbs());
     }
 
 

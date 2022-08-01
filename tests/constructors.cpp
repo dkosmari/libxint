@@ -22,7 +22,7 @@ TEST_CASE("zero")
     std::vector<xint::limb_type> z_ref(x1024::num_limbs);
 
     CHECK(!z);
-    CHECK(std::ranges::equal(z.limbs, z_ref));
+    CHECK(std::ranges::equal(z.limbs(), z_ref));
 }
 
 

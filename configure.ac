@@ -18,13 +18,9 @@ AC_LANG([C++])
 
 #AX_CXX_COMPILE_STDCXX([20], [ext])
 AX_APPEND_COMPILE_FLAGS([-std=c++20], [CXX])
-#AX_APPEND_COMPILE_FLAGS([-std=c++20], [CXXCPP])
+AX_APPEND_COMPILE_FLAGS([-std=c++20 -Wno-abi], [CXX])
 
 # Checks for libraries.
-
-dnl AX_BOOST_BASE([1.75], [found_boost=y])
-dnl AX_BOOST_UNIT_TEST_FRAMEWORK
-dnl AM_CONDITIONAL([FOUND_BOOST], [test "x$found_boost" = xy])
 
 # Checks for header files.
 

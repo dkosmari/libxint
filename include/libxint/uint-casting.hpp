@@ -53,7 +53,7 @@ namespace xint {
     template<unsigned Bits, bool Safe>
     template<std::unsigned_integral U>
     uint<Bits, Safe>::operator U()
-        const noexcept(!Safe)
+        const noexcept(!Safe && is_local)
     {
         return to_uint<std::numeric_limits<U>::digits>();
     }
@@ -65,6 +65,7 @@ namespace xint {
     uint<Bits, Safe>::to_uint()
         const noexcept(!Safe || DestBits >= Bits)
     {
+        using std::size;
         using result_t = utils::uint_t<DestBits>;
 
         if constexpr (Safe)
@@ -76,11 +77,11 @@ namespace xint {
                         + "_t"};
 
         if constexpr (limb_bits >= DestBits)
-            return static_cast<result_t>(limbs.front());
+            return static_cast<result_t>(limb(0));
         else {
             result_t result = 0;
-            for (unsigned i = 0; i < limbs.size() && i * limb_bits < DestBits; ++i)
-                result |= result_t{limbs[i]} << (i * limb_bits);
+            for (unsigned i = 0; i < size(limbs()) && i * limb_bits < DestBits; ++i)
+                result |= result_t{limb(i)} << (i * limb_bits);
             return result;
         }
     }
@@ -90,23 +91,24 @@ namespace xint {
     template<unsigned NewBits>
     uint<NewBits, Safe>
     uint<Bits, Safe>::cast() const
-        noexcept(!Safe || NewBits >= Bits)
+        noexcept((!Safe || NewBits >= Bits) && uint<NewBits, Safe>::is_local)
     {
+        using std::size;
         uint<NewBits, Safe> dst;
-        constexpr const std::size_t dst_size = dst.limbs.size();
+        constexpr const std::size_t dst_size = size(dst.limbs());
 
         if constexpr (NewBits >= Bits) {
             // widening
-            auto [last_in, last_out] = std::ranges::copy(limbs,
-                                                         dst.limbs);
-            std::fill(last_out, dst.limbs.end(), 0);
+            auto [last_in, last_out] = std::ranges::copy(limbs(),
+                                                         dst.limbs());
+            std::fill(last_out, dst.limbs().end(), 0);
         } else {
             // narrowing
             if constexpr (Safe)
-                if (utils::is_nonzero(limbs | std::views::drop(dst_size)))
+                if (utils::is_nonzero(limbs() | std::views::drop(dst_size)))
                     throw std::overflow_error{"value too large for destination"};
-            std::ranges::copy(limbs | std::views::take(dst_size),
-                              dst.limbs);
+            std::ranges::copy(limbs() | std::views::take(dst_size),
+                              dst.limbs());
         }
         return dst;
     }
@@ -116,7 +118,7 @@ namespace xint {
     uint<Bits, Safe>::operator bool()
         const noexcept
     {
-        return utils::is_nonzero(limbs);
+        return utils::is_nonzero(limbs());
     }
 
 }

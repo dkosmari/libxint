@@ -62,7 +62,7 @@ namespace xint {
         while (getxdigit(c)) {
             consumed = true;
             limb_type value = std::stoul(std::string(1, c), nullptr, 16);
-            if (eval_bit_shit_left<true>(n.limbs, n.limbs, 4))
+            if (eval_bit_shit_left<true>(n.limbs(), n.limbs(), 4))
                 overflow = true;
             n |= value;
         }
