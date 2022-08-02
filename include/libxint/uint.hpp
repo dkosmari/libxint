@@ -20,7 +20,7 @@
 
 
 #ifndef XINT_ALIGNMENT
-#define XINT_ALIGNMENT 32
+#define XINT_ALIGNMENT 16
 #endif
 
 
@@ -34,14 +34,23 @@ namespace xint {
              bool Safe = false>
     struct uint {
 
+        static_assert(Bits > 0);
         static_assert(Bits % limb_bits == 0, "total bit width must be a multiple of limb bits");
 
         static inline constexpr std::size_t num_bits = Bits;
-        static inline constexpr std::size_t num_limbs = (Bits-1)/limb_bits + 1;
-        static inline constexpr std::size_t num_bytes = num_limbs * sizeof(limb_type);
+        static inline constexpr std::size_t num_limbs = (Bits-1) / limb_bits + 1;
 
         using storage_type = auto_storage<aligned_array<limb_type, num_limbs>>;
+
+        // true when limbs are stored locally, and not in the heap
         static inline constexpr bool is_local = storage_type::is_local;
+
+        // true when operations cannot throw exceptions at all
+        static inline constexpr bool is_noexcept = Safe || !is_local;
+
+        // true when all operations are checked against overflow
+        static inline constexpr bool is_overflow_safe = Safe;
+
 
         using array_type = storage_type::data_type;
 
@@ -53,48 +62,64 @@ namespace xint {
         constexpr const limb_type& limb(std::size_t idx) const noexcept { return limbs()[idx]; }
         constexpr       limb_type& limb(std::size_t idx)       noexcept { return limbs()[idx]; }
 
-        // constructors
-        constexpr uint() noexcept(is_local) = default;
 
+        // constructors
+
+        constexpr uint() noexcept(is_local) = default;
         constexpr uint(const uint&) noexcept(is_local) = default;
-        constexpr uint(uint&&) noexcept(is_local) = default;
 
         template<unsigned Bits2>
         requires(Bits != Bits2)
-        uint(const uint<Bits2, Safe>&) noexcept(!Safe && is_local);
-
+        uint(const uint<Bits2, Safe>&)
+            noexcept(is_local && (!Safe || Bits >= Bits2));
 
         template<std::integral I>
-        uint(I sval) noexcept(!Safe && is_local);
+        uint(I sval)
+            noexcept(is_local
+                     && (!Safe
+                         ||
+                         std::numeric_limits<std::make_unsigned_t<I>>::digits <= Bits));
 
         // note: base must be a valid argument for std::stoul()
         explicit uint(const std::string& arg, unsigned base = 0);
 
 
         uint& operator =(const uint&) noexcept = default;
-        uint& operator =(uint&&) noexcept = default;
+
 
         template<unsigned Bits2>
         requires(Bits != Bits2)
         uint& operator =(const uint<Bits2, Safe>& other) noexcept(!Safe);
 
 
-        constexpr       uint<Bits, true>& safe()          noexcept;
-        constexpr const uint<Bits, true>& safe()    const noexcept;
+        // conversions
+
+        template<bool OtherSafe = Safe>
+        constexpr       uint<Bits, OtherSafe>& safe()          noexcept;
+        template<bool OtherSafe = Safe>
+        constexpr const uint<Bits, OtherSafe>& safe()    const noexcept;
+
         constexpr       uint<Bits, false>& unsafe()       noexcept;
         constexpr const uint<Bits, false>& unsafe() const noexcept;
 
+        template<bool OtherSafe>
+        constexpr const uint<Bits, OtherSafe>& compat(const uint<Bits, OtherSafe>&) const noexcept;
+        template<bool OtherSafe>
+        constexpr       uint<Bits, OtherSafe>& compat(const uint<Bits, OtherSafe>&)       noexcept;
 
-        // conversion: may throw std::overflow_error if Safe
-        template<std::unsigned_integral U>
-        explicit operator U() const noexcept(!Safe && is_local);
+
 
         template<unsigned DestBits>
         utils::uint_t<DestBits> to_uint() const noexcept(!Safe || DestBits >= Bits);
 
+        template<std::unsigned_integral U>
+        explicit operator U() const
+            noexcept(noexcept(to_uint<std::numeric_limits<U>::digits>()));
+
+
         template<unsigned NewBits>
         uint<NewBits, Safe> cast() const
-            noexcept((!Safe || NewBits >= Bits) && uint<NewBits, Safe>::is_local);
+            noexcept(noexcept(uint<NewBits, Safe>(*this)));
 
 
         explicit operator bool() const noexcept;
@@ -131,11 +156,11 @@ namespace xint {
 }
 
 
-#include "uint-casting.hpp"
 #include "uint-constructors.hpp"
-#include "uint-operators.hpp"
+#include "uint-conversions.hpp"
 #include "uint-serialization.hpp"
 
+#include "operators.hpp"
 #include "stdlib.hpp"
 
 
@@ -143,7 +168,7 @@ namespace xint {
 
 
 /*
- *  libxint: big fixed-width unsigned int implementation.
+ *  libxint: extended fixed-width unsigned int implementation.
  *  Copyright (C) 2022  Daniel K. O.
  *
  *  This program is free software: you can redistribute it and/or modify

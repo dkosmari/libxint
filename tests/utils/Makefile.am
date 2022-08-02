@@ -5,7 +5,7 @@ AM_CXXFLAGS = \
 	-Wall -Wextra
 
 
-noinst_LIBRARIES = libutils.a
+check_LIBRARIES = libutils.a
 
 libutils_a_SOURCES = \
 	random.hpp random.cpp

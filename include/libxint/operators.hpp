@@ -19,6 +19,7 @@
 #include "eval-io.hpp"
 #include "eval-multiplication.hpp"
 #include "eval-subtraction.hpp"
+#include "stdlib.hpp"
 #include "uint.hpp"
 
 

@@ -11,12 +11,12 @@ xint_HEADERS = \
 	eval-inc-dec.hpp \
 	eval-io.hpp \
 	eval-subtraction.hpp \
+	operators.hpp \
 	stdlib.hpp \
 	storage.hpp \
 	types.hpp \
-	uint-casting.hpp \
 	uint-constructors.hpp \
-	uint-operators.hpp \
+	uint-conversions.hpp \
 	uint-serialization.hpp \
 	uint.hpp \
 	utils.hpp

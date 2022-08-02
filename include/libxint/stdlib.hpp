@@ -6,7 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <string>
-#include <utility> // swap()
+#include <utility> // swap(), pair
 
 #include "eval-bits.hpp"
 #include "uint.hpp"
@@ -171,54 +171,80 @@ namespace xint {
     }
 
 
+    // this is Stein's binary GCD algorithm
     template<unsigned Bits, bool Safe>
     uint<Bits, Safe>
     gcd(uint<Bits, Safe> a,
         uint<Bits, Safe> b)
-        noexcept(!Safe)
+        noexcept(uint<Bits, Safe>::is_local)
     {
-        // this is Stein's binary GCD algorithm
         if (!a)
             return b;
         if (!b)
             return a;
 
         // find trailing zeros for both
-        auto az = countr_zero(a);
+        const auto az = countr_zero(a);
         auto bz = countr_zero(b);
-        auto cz = std::min(az, bz);
+        const auto cz = std::min(az, bz);
 
-        b >>= cz;
         a >>= az;
 
-        do {
+        while (bz != Bits) { // equivalent to asking if b != 0
+
             // invariant: a is always odd
 
-            bz = countr_zero(b);
-            b >>= bz;
-
-            // now b is odd
+            b >>= bz; // now b is also odd
 
             if (a > b)
                 swap(a, b);
+            b -= a; // b becomes even
 
-            b -= a;
+            bz = countr_zero(b);
+        }
 
-        } while (b);
+        a <<= cz;
+        return a;
+    }
 
-        return a << cz;
+    // TODO: extended gcd
+
+
+    template<unsigned Bits, bool Safe>
+    uint<Bits, Safe>
+    lcm(const uint<Bits, Safe>& a,
+        const uint<Bits, Safe>& b)
+        noexcept(!Safe && uint<Bits, Safe>::is_local)
+    {
+        if (!a || !b)
+            return 0;
+        return a / gcd(a, b) * b;
     }
 
 
+    template<unsigned Bits, bool Safe>
+    uint<Bits, Safe>
+    midpoint(const uint<Bits, Safe>& a,
+             const uint<Bits, Safe>& b)
+        noexcept(uint<Bits, Safe>::is_local)
+    {
+        // note: must avoid overflow
+        uint<Bits, Safe> c;
+        bool overflow = eval_add(c.limbs(), a.limbs(), b.limbs());
+        eval_bit_shift_right(c.limbs(), c.limbs(), 1);
+        eval_bit_set(c.limbs(), Bits - 1, overflow);
+        return c;
+    }
 
 
-    /* TODO:
-     * lcm()
-     * midpoint()
-     * div()
-     * max()
-     */
-
+    template<unsigned Bits, bool Safe>
+    std::pair<uint<Bits, Safe>,
+              uint<Bits, Safe>>
+    div(const uint<Bits, Safe>& a,
+        const uint<Bits, Safe>& b)
+    {
+        return eval_div(a, b);
+    }
 
 
 }
@@ -252,15 +278,15 @@ namespace std {
         static constexpr bool traps = true;
         static constexpr bool tinyness_before = false;
 
-        static constexpr xint::uint<Bits, Safe> min() noexcept { return 0u; }
+        static constexpr xint::uint<Bits, Safe> denorm_min() noexcept { return 0u; }
+        static constexpr xint::uint<Bits, Safe> epsilon() noexcept { return 0u; }
+        static constexpr xint::uint<Bits, Safe> infinity() noexcept { return 0u; }
         static constexpr xint::uint<Bits, Safe> lowest() noexcept { return min(); }
         static constexpr xint::uint<Bits, Safe> max() noexcept { return ~min(); }
-        static constexpr xint::uint<Bits, Safe> epsilon() noexcept { return 0u; }
-        static constexpr xint::uint<Bits, Safe> round_error() noexcept { return 0u; }
-        static constexpr xint::uint<Bits, Safe> infinity() noexcept { return 0u; }
+        static constexpr xint::uint<Bits, Safe> min() noexcept { return 0u; }
         static constexpr xint::uint<Bits, Safe> quiet_NaN() noexcept { return 0u; }
+        static constexpr xint::uint<Bits, Safe> round_error() noexcept { return 0u; }
         static constexpr xint::uint<Bits, Safe> signaling_NaN() noexcept { return 0u; }
-        static constexpr xint::uint<Bits, Safe> denorm_min() noexcept { return 0u; }
     };
 
 

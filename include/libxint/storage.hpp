@@ -18,7 +18,6 @@ namespace xint {
 
         using data_type = T;
 
-
         heap_storage() = default;
 
         heap_storage(const heap_storage& other)
@@ -28,6 +27,7 @@ namespace xint {
 
         heap_storage&
         operator =(const heap_storage& other)
+            noexcept
         {
             *ptr = *other.ptr;
             return *this;
@@ -40,8 +40,7 @@ namespace xint {
         constexpr const data_type* operator ->() const noexcept { return ptr->get(); }
         constexpr       data_type& operator ->()       noexcept { return ptr->get(); }
 
-        std::unique_ptr<T> ptr = std::make_unique<T>();
-
+        std::unique_ptr<data_type> ptr = std::make_unique<data_type>();
     };
 
 

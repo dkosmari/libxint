@@ -2,7 +2,7 @@
 #define XINT_EVAL_DIVISION_HPP
 
 #include <cassert>
-#include <cstdlib>
+#include <cstdlib> // abort()
 #include <ranges>
 #include <stdexcept>
 #include <utility> // pair
@@ -10,7 +10,6 @@
 #include "eval-comparison.hpp"
 #include "eval-multiplication.hpp"
 #include "eval-subtraction.hpp"
-#include "uint-operators.hpp"
 #include "uint.hpp"
 #include "utils.hpp"
 #include "stdlib.hpp"
@@ -24,9 +23,15 @@ namespace xint {
     std::pair<uint<Bits, Safe>, uint<Bits, Safe>>
     eval_div(uint<Bits, Safe> a,
              const uint<Bits, Safe>& b)
+        noexcept(!Safe)
     {
-        if (!b)
-            throw std::domain_error{"division by zero"};
+        if (!b) {
+            if constexpr (Safe)
+                throw std::domain_error{"division by zero"};
+            else
+                abort();
+        }
+
         if (!a)
             return {0, 0};
 
@@ -64,12 +69,18 @@ namespace xint {
     std::pair<uint<Bits, Safe>, limb_type>
     eval_div_limb(uint<Bits, Safe> a,
                   limb_type b)
+        noexcept(!Safe)
     {
         using std::views::drop;
         using std::size;
 
-        if (!b)
-            throw std::domain_error{"division by zero"};
+        if (!b) {
+            if constexpr (Safe)
+                throw std::domain_error{"division by zero"};
+            else
+                abort();
+        }
+
         if (!a)
             return {0, 0};
 
@@ -90,13 +101,16 @@ namespace xint {
             wide_limb_type factor = top_a / b;
             assert((factor >> limb_bits) == 0);
 
-            uint<2*limb_bits, Safe> d = static_cast<wide_limb_type>(factor * b);
             bool d_neg = a_neg;
-            if (eval_sub_inplace(a.limbs() | drop(shift),
-                                 d.limbs())) {
-                a_neg = !a_neg;
-                a = -a;
+            {
+                uint d = static_cast<wide_limb_type>(factor * b);
+                if (eval_sub_inplace(a.limbs() | drop(shift),
+                                     d.limbs())) {
+                    a_neg = !a_neg;
+                    a = -a;
+                }
             }
+
 
             if (d_neg)
                 eval_sub_inplace_limb(q.limbs() | drop(shift), factor);

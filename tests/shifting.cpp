@@ -1,3 +1,5 @@
+#include <cstdint>
+
 #include <libxint/uint.hpp>
 
 #include "catch2/catch_amalgamated.hpp"
@@ -7,19 +9,19 @@
 const unsigned max_tries = 100000;
 
 
-TEST_CASE("random 64")
+TEST_CASE("random64", "[random][64]")
 {
     using std::uint64_t;
-    using big64 = xint::uint<64>;
+    using x64 = xint::uint<64>;
     for (unsigned i = 0; i < max_tries; ++i) {
         uint64_t a = utils::rand64();
         unsigned b = utils::rand(63);
         uint64_t c = a << b;
         uint64_t d = a >> b;
 
-        big64 xa = a;
-        big64 xc = xa << b;
-        big64 xd = xa >> b;
+        x64 xa = a;
+        x64 xc = xa << b;
+        x64 xd = xa >> b;
 
         CHECK(xc == c);
         CHECK(xd == d);
@@ -28,7 +30,7 @@ TEST_CASE("random 64")
 
 
 
-TEST_CASE("special")
+TEST_CASE("special", "[32]")
 {
     using x32 = xint::uint<32>;
 
@@ -96,7 +98,7 @@ TEST_CASE("special")
 }
 
 
-TEST_CASE("shift left overflow")
+TEST_CASE("left-overflow", "[24]")
 {
     using x24 = xint::uint<24, true>;
 
@@ -195,7 +197,7 @@ TEST_CASE("shift left overflow")
 }
 
 
-TEST_CASE("shift right overflow")
+TEST_CASE("right-overflow", "[24]")
 {
     using x24 = xint::uint<24, true>;
 

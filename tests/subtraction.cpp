@@ -1,3 +1,5 @@
+#include <cstdint>
+
 #include <libxint/uint.hpp>
 
 #include "catch2/catch_amalgamated.hpp"
@@ -7,7 +9,7 @@
 const unsigned max_tries = 1000000;
 
 
-TEST_CASE("random 64")
+TEST_CASE("random64", "[random][64]")
 {
     using std::uint64_t;
     using x64 = xint::uint<64>;

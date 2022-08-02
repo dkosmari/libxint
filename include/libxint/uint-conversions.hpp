@@ -11,22 +11,24 @@ namespace xint {
 
 
     template<unsigned Bits, bool Safe>
+    template<bool OtherSafe>
     constexpr
-    uint<Bits, true>&
+    uint<Bits, OtherSafe>&
     uint<Bits, Safe>::safe()
         noexcept
     {
-        return reinterpret_cast<uint<Bits, true>&>(*this);
+        return reinterpret_cast<uint<Bits, OtherSafe>&>(*this);
     }
 
 
     template<unsigned Bits, bool Safe>
+    template<bool OtherSafe>
     constexpr
-    const uint<Bits, true>&
+    const uint<Bits, OtherSafe>&
     uint<Bits, Safe>::safe()
         const noexcept
     {
-        return reinterpret_cast<const uint<Bits, true>&>(*this);
+        return reinterpret_cast<const uint<Bits, OtherSafe>&>(*this);
     }
 
 
@@ -51,12 +53,26 @@ namespace xint {
 
 
     template<unsigned Bits, bool Safe>
-    template<std::unsigned_integral U>
-    uint<Bits, Safe>::operator U()
-        const noexcept(!Safe && is_local)
+    template<bool OtherSafe>
+    constexpr
+    const uint<Bits, OtherSafe>&
+    uint<Bits, Safe>::compat(const uint<Bits, OtherSafe>&)
+        const noexcept
     {
-        return to_uint<std::numeric_limits<U>::digits>();
+        return reinterpret_cast<const uint<Bits, OtherSafe>&>(*this);
     }
+
+
+    template<unsigned Bits, bool Safe>
+    template<bool OtherSafe>
+    constexpr
+    uint<Bits, OtherSafe>&
+    uint<Bits, Safe>::compat(const uint<Bits, OtherSafe>&)
+        noexcept
+    {
+        return reinterpret_cast<uint<Bits, OtherSafe>&>(*this);
+    }
+
 
 
     template<unsigned Bits, bool Safe>
@@ -88,29 +104,22 @@ namespace xint {
 
 
     template<unsigned Bits, bool Safe>
+    template<std::unsigned_integral U>
+    uint<Bits, Safe>::operator U()
+        const noexcept(noexcept(to_uint<std::numeric_limits<U>::digits>()))
+    {
+        return to_uint<std::numeric_limits<U>::digits>();
+    }
+
+
+    template<unsigned Bits, bool Safe>
     template<unsigned NewBits>
     uint<NewBits, Safe>
-    uint<Bits, Safe>::cast() const
-        noexcept((!Safe || NewBits >= Bits) && uint<NewBits, Safe>::is_local)
+    uint<Bits, Safe>::cast()
+        const
+        noexcept(noexcept(uint<NewBits, Safe>(*this)))
     {
-        using std::size;
-        uint<NewBits, Safe> dst;
-        constexpr const std::size_t dst_size = size(dst.limbs());
-
-        if constexpr (NewBits >= Bits) {
-            // widening
-            auto [last_in, last_out] = std::ranges::copy(limbs(),
-                                                         dst.limbs());
-            std::fill(last_out, dst.limbs().end(), 0);
-        } else {
-            // narrowing
-            if constexpr (Safe)
-                if (utils::is_nonzero(limbs() | std::views::drop(dst_size)))
-                    throw std::overflow_error{"value too large for destination"};
-            std::ranges::copy(limbs() | std::views::take(dst_size),
-                              dst.limbs());
-        }
-        return dst;
+        return uint<NewBits, Safe>(*this);
     }
 
 

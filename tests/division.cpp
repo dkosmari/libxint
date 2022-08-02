@@ -1,3 +1,5 @@
+#include <cstdint>
+
 #include <libxint/uint.hpp>
 
 #include "catch2/catch_amalgamated.hpp"
@@ -7,7 +9,7 @@
 const unsigned max_tries = 1000000;
 
 
-TEST_CASE("special")
+TEST_CASE("special", "[64]")
 {
     using std::uint64_t;
     using x64 = xint::uint<64>;
@@ -20,7 +22,7 @@ TEST_CASE("special")
 
         x64 xa = a;
         x64 xb = b;
-        auto [xc, xd] = eval_div(xa, xb);
+        auto [xc, xd] = div(xa, xb);
 
         CHECK(xc == c);
         CHECK(xd == d);
@@ -29,13 +31,12 @@ TEST_CASE("special")
     {
         uint64_t a = 14933659896240572917ull;
         uint64_t b =  8135395356393059844ull;
-
         uint64_t c = a / b;
         uint64_t d = a % b;
 
         x64 xa = a;
         x64 xb = b;
-        auto [xc, xd] = eval_div(xa, xb);
+        auto [xc, xd] = div(xa, xb);
 
         CHECK(xc == c);
         CHECK(xd == d);
@@ -43,7 +44,7 @@ TEST_CASE("special")
 }
 
 
-TEST_CASE("random 64")
+TEST_CASE("random64", "[random][64]")
 {
     using std::uint64_t;
     using x64 = xint::uint<64>;
@@ -58,7 +59,7 @@ TEST_CASE("random 64")
 
         x64 xa = a;
         x64 xb = b;
-        auto [xc, xd] = eval_div(xa, xb);
+        auto [xc, xd] = div(xa, xb);
 
         CHECK(xc == c);
         CHECK(xd == d);

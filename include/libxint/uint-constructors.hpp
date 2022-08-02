@@ -20,12 +20,12 @@ namespace xint {
     template<unsigned Bits2>
     requires (Bits != Bits2)
     uint<Bits, Safe>::uint(const uint<Bits2, Safe>& other)
-        noexcept(!Safe && is_local)
+        noexcept(is_local && (!Safe || Bits >= Bits2))
     {
         bool overload = eval_assign(limbs(), other.limbs());
         if constexpr (Safe)
             if (overload)
-                throw std::overflow_error{"assignment overflow"};
+                throw std::overflow_error{"assignment overflow from conversion constructor"};
     }
 
 
@@ -33,7 +33,10 @@ namespace xint {
     template<unsigned Bits, bool Safe>
     template<std::integral I>
     uint<Bits, Safe>::uint(I sval)
-        noexcept(!Safe && is_local)
+        noexcept(is_local
+                 && (!Safe
+                     ||
+                     std::numeric_limits<std::make_unsigned_t<I>>::digits <= Bits))
     {
         using std::begin;
         using U = std::make_unsigned_t<I>;
@@ -43,7 +46,8 @@ namespace xint {
         auto out = begin(limbs());
         while (uval) {
             if (out == end(limbs())) {
-                if constexpr (Safe)
+                // note: the second half of the test is redundant, but avoids a compiler warning
+                if constexpr (Safe && U_bits > Bits)
                     throw std::out_of_range{"initializer is too large"};
                 else
                     break;

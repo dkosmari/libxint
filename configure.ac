@@ -18,7 +18,6 @@ AC_LANG([C++])
 
 #AX_CXX_COMPILE_STDCXX([20], [ext])
 AX_APPEND_COMPILE_FLAGS([-std=c++20], [CXX])
-AX_APPEND_COMPILE_FLAGS([-std=c++20 -Wno-abi], [CXX])
 
 # Checks for libraries.
 

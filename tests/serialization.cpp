@@ -1,5 +1,7 @@
+#include <cstdint>
 #include <iomanip>
 #include <ostream>
+#include <string>
 
 #include <libxint/uint.hpp>
 
