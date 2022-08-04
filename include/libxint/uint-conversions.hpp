@@ -3,76 +3,13 @@
 
 #include <stdexcept>
 #include <string>
+#include <utility> // forward()
 
+#include "traits.hpp"
 #include "uint.hpp"
 
 
 namespace xint {
-
-
-    template<unsigned Bits, bool Safe>
-    template<bool OtherSafe>
-    constexpr
-    uint<Bits, OtherSafe>&
-    uint<Bits, Safe>::safe()
-        noexcept
-    {
-        return reinterpret_cast<uint<Bits, OtherSafe>&>(*this);
-    }
-
-
-    template<unsigned Bits, bool Safe>
-    template<bool OtherSafe>
-    constexpr
-    const uint<Bits, OtherSafe>&
-    uint<Bits, Safe>::safe()
-        const noexcept
-    {
-        return reinterpret_cast<const uint<Bits, OtherSafe>&>(*this);
-    }
-
-
-    template<unsigned Bits, bool Safe>
-    constexpr
-    uint<Bits, false>&
-    uint<Bits, Safe>::unsafe()
-        noexcept
-    {
-        return reinterpret_cast<uint<Bits, false>&>(*this);
-    }
-
-
-    template<unsigned Bits, bool Safe>
-    constexpr
-    const uint<Bits, false>&
-    uint<Bits, Safe>::unsafe()
-        const noexcept
-    {
-        return reinterpret_cast<const uint<Bits, false>&>(*this);
-    }
-
-
-    template<unsigned Bits, bool Safe>
-    template<bool OtherSafe>
-    constexpr
-    const uint<Bits, OtherSafe>&
-    uint<Bits, Safe>::compat(const uint<Bits, OtherSafe>&)
-        const noexcept
-    {
-        return reinterpret_cast<const uint<Bits, OtherSafe>&>(*this);
-    }
-
-
-    template<unsigned Bits, bool Safe>
-    template<bool OtherSafe>
-    constexpr
-    uint<Bits, OtherSafe>&
-    uint<Bits, Safe>::compat(const uint<Bits, OtherSafe>&)
-        noexcept
-    {
-        return reinterpret_cast<uint<Bits, OtherSafe>&>(*this);
-    }
-
 
 
     template<unsigned Bits, bool Safe>
@@ -129,6 +66,41 @@ namespace xint {
     {
         return utils::is_nonzero(limbs());
     }
+
+
+    template<unsigned_integral U1,
+             unsigned_integral U2>
+    requires(U1::num_bits == U2::num_bits)
+    constexpr
+    U1&
+    safety_cast(U2&& a)
+        noexcept
+    {
+        return reinterpret_cast<U1&>(a);
+    }
+
+
+    template<bool Safe,
+             unsigned_integral U>
+    constexpr
+    const uint<U::num_bits, Safe>&
+    safety_cast(const U& a)
+        noexcept
+    {
+        return reinterpret_cast<const uint<U::num_bits, Safe>&>(a);
+    }
+
+
+    template<bool Safe,
+             unsigned_integral U>
+    constexpr
+    uint<U::num_bits, Safe>&
+    safety_cast(U& a)
+        noexcept
+    {
+        return reinterpret_cast<uint<U::num_bits, Safe>&>(a);
+    }
+
 
 }
 

@@ -29,6 +29,12 @@ namespace xint {
     }
 
 
+    template<unsigned Bits, bool Safe>
+    uint<Bits, Safe>::uint(const uint<Bits, !Safe>& other)
+        noexcept(is_local) :
+        data{other.data}
+    {}
+
 
     template<unsigned Bits, bool Safe>
     template<std::integral I>

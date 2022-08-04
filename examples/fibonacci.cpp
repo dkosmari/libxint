@@ -26,10 +26,6 @@ void print_fibo()
         cout << "stopped due to overflow" << endl;
     }
     cout << i << ": " << hex << b << dec <<endl;
-
-    swap(a, b);
-    cout << a << endl;
-    cout << b << endl;
 }
 
 

@@ -25,3 +25,22 @@ TEST_CASE("random64", "[random][64]")
         CHECK(xc == c);
     }
 }
+
+
+TEST_CASE("special inplace", "[64]")
+{
+    using std::uint64_t;
+    using x64 = xint::uint<64>;
+
+    uint64_t a;
+    x64 xa;
+
+    {
+        a = 1234567890;
+        xa = a;
+        a *= a;
+        xa *= xa;
+        CHECK(xa == a);
+    }
+
+}

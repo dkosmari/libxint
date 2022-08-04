@@ -73,6 +73,11 @@ namespace xint {
         uint(const uint<Bits2, Safe>&)
             noexcept(is_local && (!Safe || Bits >= Bits2));
 
+        explicit
+        uint(const uint<Bits, !Safe>& other)
+            noexcept(is_local);
+
+
         template<std::integral I>
         uint(I sval)
             noexcept(is_local
@@ -84,30 +89,14 @@ namespace xint {
         explicit uint(const std::string& arg, unsigned base = 0);
 
 
-        uint& operator =(const uint&) noexcept = default;
+        // assignment
 
-
-        template<unsigned Bits2>
-        requires(Bits != Bits2)
-        uint& operator =(const uint<Bits2, Safe>& other) noexcept(!Safe);
+        template<unsigned Bits2, bool Safe2>
+        uint& operator =(const uint<Bits2, Safe2>& other)
+            noexcept((Bits == Bits2) || (!Safe && !Safe2));
 
 
         // conversions
-
-        template<bool OtherSafe = Safe>
-        constexpr       uint<Bits, OtherSafe>& safe()          noexcept;
-        template<bool OtherSafe = Safe>
-        constexpr const uint<Bits, OtherSafe>& safe()    const noexcept;
-
-        constexpr       uint<Bits, false>& unsafe()       noexcept;
-        constexpr const uint<Bits, false>& unsafe() const noexcept;
-
-        template<bool OtherSafe>
-        constexpr const uint<Bits, OtherSafe>& compat(const uint<Bits, OtherSafe>&) const noexcept;
-        template<bool OtherSafe>
-        constexpr       uint<Bits, OtherSafe>& compat(const uint<Bits, OtherSafe>&)       noexcept;
-
-
 
         template<unsigned DestBits>
         utils::uint_t<DestBits> to_uint() const noexcept(!Safe || DestBits >= Bits);
@@ -160,8 +149,11 @@ namespace xint {
 #include "uint-conversions.hpp"
 #include "uint-serialization.hpp"
 
+#include "limits.hpp"
 #include "operators.hpp"
+#include "random.hpp"
 #include "stdlib.hpp"
+#include "traits.hpp"
 
 
 #endif

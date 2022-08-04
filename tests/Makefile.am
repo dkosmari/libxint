@@ -1,5 +1,6 @@
 # tests/Makefile.am
 
+$(info TERM="$(TERM)")
 
 AM_DEFAULT_SOURCE_EXT = .cpp
 

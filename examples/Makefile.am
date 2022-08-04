@@ -10,4 +10,5 @@ AM_DEFAULT_SOURCE_EXT = .cpp
 
 noinst_PROGRAMS = \
 	basic \
-	fibonacci
+	fibonacci \
+	prime-test

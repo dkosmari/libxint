@@ -3,39 +3,42 @@
 
 #include <algorithm> // min()
 #include <bit>
-#include <cmath>
 #include <limits>
 #include <string>
+#include <type_traits>
 #include <utility> // swap(), pair
 
 #include "eval-bits.hpp"
+#include "limits.hpp"
+#include "traits.hpp"
 #include "uint.hpp"
+#include "uint-conversions.hpp"
 
 
 namespace xint {
 
 
-    template<unsigned Bits, bool Safe1, bool Safe2>
-    void swap(uint<Bits, Safe1>& a,
-              uint<Bits, Safe2>& b)
+    template<unsigned_integral U1,
+             unsigned_integral U2>
+    void swap(U1& a, U2& b)
         noexcept
     {
         swap(a.data, b.data);
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     std::string
-    to_string(const uint<Bits, Safe>& a)
+    to_string(const U& a)
     {
         return a.to_dec();
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     constexpr
     bool
-    has_single_bit(const uint<Bits, Safe>& x)
+    has_single_bit(const U& x)
         noexcept
     {
         bool found = false;
@@ -52,119 +55,123 @@ namespace xint {
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     constexpr
-    uint<Bits, Safe>
-    bit_ceil(const uint<Bits, Safe>& x)
-        noexcept(!Safe)
+    U
+    bit_ceil(const U& x)
+        noexcept(noexcept(U{}))
     {
-        if (x <= 1u)
-            return 1u;
+        if (x <= 1)
+            return limb_type{1};
         if (has_single_bit(x))
             return x;
-        uint<Bits, Safe> y = 0;
-        const unsigned top_bit = Bits - countl_zero(x);
+        U y = limb_type{0};
+        const unsigned top_bit = bit_width(x);
         assert(top_bit + 1 < size(y.limbs()));
-        y.bit(top_bit + 1, true);
+        eval_bit_set(y.limbs(), top_bit + 1, true);
         return y;
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     constexpr
-    uint<Bits, Safe>
-    bit_floor(const uint<Bits, Safe>& x)
-        noexcept(!Safe)
+    U
+    bit_floor(const U& x)
+        noexcept(noexcept(U{}))
     {
         if (!x)
-            return 0u;
-        uint<Bits, Safe> y = 0;
-        y.bit(bit_width(x), true);
+            return limb_type{0};
+        U y = 0;
+        eval_bit_set(y.limbs(), bit_width(x), true);
         return y;
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     constexpr
-    uint<Bits, Safe>
-    bit_width(const uint<Bits, Safe>& x)
+    unsigned
+    bit_width(const U& x)
         noexcept
     {
-        return Bits - countl_zero(x);
+        return U::num_bits - countl_zero(x);
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     [[nodiscard]]
     constexpr
-    uint<Bits, Safe>
-    rotl(const uint<Bits, Safe>& x,
+    U
+    rotl(const U& x,
          int r)
-        noexcept(!Safe)
+        noexcept(noexcept(U{}))
     {
         if (r == 0)
             return x;
         if (r < 0)
             return rotr(x, -r);
-        return (x << r) | (x >> (Bits - r));
+        return safety_cast<U>((safety_cast<false>(x) << r)
+                              |
+                              (safety_cast<false>(x) >> (U::num_bits - r)));
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     [[nodiscard]]
     constexpr
-    uint<Bits, Safe>
-    rotr(const uint<Bits, Safe>& x,
+    U
+    rotr(const U& x,
          int r)
-        noexcept(!Safe)
+        noexcept(noexcept(U{}))
     {
         if (r == 0)
             return x;
         if (r < 0)
             return rotl(x, -r);
-        return (x >> r) | (x << (Bits - r));
+        return safety_cast<U>((safety_cast<false>(x) >> r)
+                              |
+                              safety_cast<false>(x) << (U::num_bits - r));
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     unsigned
-    countl_zero(const uint<Bits, Safe>& x)
+    countl_zero(const U& x)
         noexcept
     {
         return eval_bit_countl_zero(x.limbs());
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     unsigned
-    countl_one(const uint<Bits, Safe>& x)
+    countl_one(const U& x)
         noexcept
     {
         return eval_bit_countl_one(x.limbs());
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     unsigned
-    countr_zero(const uint<Bits, Safe>& x)
+    countr_zero(const U& x)
         noexcept
     {
         return eval_bit_countr_zero(x.limbs());
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     unsigned
-    countr_one(const uint<Bits, Safe>& x)
+    countr_one(const U& x)
         noexcept
     {
         return eval_bit_countr_one(x.limbs());
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     unsigned
-    popcount(const uint<Bits, Safe>& x)
+    popcount(const U& x)
         noexcept
     {
         return eval_bit_popcount(x.limbs());
@@ -172,11 +179,11 @@ namespace xint {
 
 
     // this is Stein's binary GCD algorithm
-    template<unsigned Bits, bool Safe>
-    uint<Bits, Safe>
-    gcd(uint<Bits, Safe> a,
-        uint<Bits, Safe> b)
-        noexcept(uint<Bits, Safe>::is_local)
+    template<unsigned_integral U>
+    U
+    gcd(U a,
+        U b)
+        noexcept(noexcept(U{}))
     {
         if (!a)
             return b;
@@ -184,13 +191,13 @@ namespace xint {
             return a;
 
         // find trailing zeros for both
-        const auto az = countr_zero(a);
-        auto bz = countr_zero(b);
-        const auto cz = std::min(az, bz);
+        const unsigned az = countr_zero(a);
+        unsigned bz = countr_zero(b);
+        const unsigned cz = std::min(az, bz);
 
         a >>= az;
 
-        while (bz != Bits) { // equivalent to asking if b != 0
+        while (bz != U::num_bits) { // equivalent to asking if b != 0
 
             // invariant: a is always odd
 
@@ -210,11 +217,12 @@ namespace xint {
     // TODO: extended gcd
 
 
-    template<unsigned Bits, bool Safe>
-    uint<Bits, Safe>
-    lcm(const uint<Bits, Safe>& a,
-        const uint<Bits, Safe>& b)
-        noexcept(!Safe && uint<Bits, Safe>::is_local)
+    template<unsigned_integral U>
+    U
+    lcm(const U& a,
+        const U& b)
+    //noexcept(!is_safe_v<U> && is_local_v<U>)
+        noexcept(noexcept(a / gcd(a, b) * b))
     {
         if (!a || !b)
             return 0;
@@ -222,17 +230,17 @@ namespace xint {
     }
 
 
-    template<unsigned Bits, bool Safe>
-    uint<Bits, Safe>
-    midpoint(const uint<Bits, Safe>& a,
-             const uint<Bits, Safe>& b)
-        noexcept(uint<Bits, Safe>::is_local)
+    template<unsigned_integral U>
+    U
+    midpoint(const U& a,
+             const U& b)
+        noexcept(noexcept(U{}))
     {
         // note: must avoid overflow
-        uint<Bits, Safe> c;
+        U c;
         bool overflow = eval_add(c.limbs(), a.limbs(), b.limbs());
         eval_bit_shift_right(c.limbs(), c.limbs(), 1);
-        eval_bit_set(c.limbs(), Bits - 1, overflow);
+        eval_bit_set(c.limbs(), U::num_bits - 1, overflow);
         return c;
     }
 
@@ -245,57 +253,6 @@ namespace xint {
     {
         return eval_div(a, b);
     }
-
-
-}
-
-
-namespace std {
-
-    template<unsigned Bits, bool Safe>
-    struct numeric_limits<xint::uint<Bits, Safe>> {
-        static constexpr bool is_specialized = true;
-        static constexpr bool is_signed = false;
-        static constexpr bool is_integer = true;
-        static constexpr bool is_exact = true;
-        static constexpr bool has_infinity = false;
-        static constexpr bool has_quiet_NaN = false;
-        static constexpr bool has_signaling_NaN = false;
-        static constexpr float_denorm_style has_denorm = denorm_absent;
-        static constexpr bool has_denorm_loss = false;
-        static constexpr float_round_style round_style = round_toward_zero;
-        static constexpr bool is_iec559 = false;
-        static constexpr bool is_bounded = true;
-        static constexpr bool is_modulo = true;
-        static constexpr int digits = xint::uint<Bits, Safe>::num_limbs; // 2
-        static constexpr int digits10 = Bits * log10(2);
-        static constexpr int max_digits10 = 0;
-        static constexpr auto radix = xint::wide_limb_type{1} << xint::limb_bits;
-        static constexpr int min_exponent = 0;
-        static constexpr int min_exponent10 = 0;
-        static constexpr int max_exponent = 0;
-        static constexpr int max_exponent10 = 0;
-        static constexpr bool traps = true;
-        static constexpr bool tinyness_before = false;
-
-        static constexpr xint::uint<Bits, Safe> denorm_min() noexcept { return 0u; }
-        static constexpr xint::uint<Bits, Safe> epsilon() noexcept { return 0u; }
-        static constexpr xint::uint<Bits, Safe> infinity() noexcept { return 0u; }
-        static constexpr xint::uint<Bits, Safe> lowest() noexcept { return min(); }
-        static constexpr xint::uint<Bits, Safe> max() noexcept { return ~min(); }
-        static constexpr xint::uint<Bits, Safe> min() noexcept { return 0u; }
-        static constexpr xint::uint<Bits, Safe> quiet_NaN() noexcept { return 0u; }
-        static constexpr xint::uint<Bits, Safe> round_error() noexcept { return 0u; }
-        static constexpr xint::uint<Bits, Safe> signaling_NaN() noexcept { return 0u; }
-    };
-
-
-    template<unsigned Bits1, unsigned Bits2,
-             bool Safe>
-    struct common_type<xint::uint<Bits1, Safe>,
-                       xint::uint<Bits2, Safe>> {
-        using type = xint::uint<max(Bits1, Bits2), Safe>;
-    };
 
 
 }
