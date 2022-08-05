@@ -275,7 +275,7 @@ namespace xint {
 
     template<std::ranges::contiguous_range A>
     void
-    eval_bit_flip_inplace(A&& a)
+    eval_bit_flip(A&& a)
         noexcept
     {
         for (auto& v : a)
@@ -340,6 +340,18 @@ namespace xint {
                 break;
         }
         return ones;
+    }
+
+
+    template<std::ranges::contiguous_range A>
+    unsigned
+    eval_bit_width(const A& a)
+        noexcept
+    {
+        using std::size;
+        using limb_t = std::ranges::range_value_t<A>;
+        constexpr auto bits_per_limb = std::numeric_limits<limb_t>::digits;
+        return bits_per_limb * size(a) - eval_bit_countl_zero(a);
     }
 
 

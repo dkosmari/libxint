@@ -50,17 +50,6 @@ namespace xint {
 
 
     template<unsigned Bits, bool Safe>
-    template<unsigned NewBits>
-    uint<NewBits, Safe>
-    uint<Bits, Safe>::cast()
-        const
-        noexcept(noexcept(uint<NewBits, Safe>(*this)))
-    {
-        return uint<NewBits, Safe>(*this);
-    }
-
-
-    template<unsigned Bits, bool Safe>
     uint<Bits, Safe>::operator bool()
         const noexcept
     {

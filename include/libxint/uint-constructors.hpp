@@ -17,23 +17,15 @@ namespace xint {
 
 
     template<unsigned Bits, bool Safe>
-    template<unsigned Bits2>
-    requires (Bits != Bits2)
-    uint<Bits, Safe>::uint(const uint<Bits2, Safe>& other)
-        noexcept(is_local && (!Safe || Bits >= Bits2))
+    template<unsigned Bits2, bool Safe2>
+    uint<Bits, Safe>::uint(const uint<Bits2, Safe2>& other)
+        noexcept(is_local && (Bits >= Bits2 || !(Safe || Safe2)))
     {
-        bool overload = eval_assign(limbs(), other.limbs());
-        if constexpr (Safe)
-            if (overload)
-                throw std::overflow_error{"assignment overflow from conversion constructor"};
+        bool overflow = eval_assign(limbs(), other.limbs());
+        if constexpr ((Safe || Safe2) && Bits < Bits2)
+            if (overflow)
+                throw std::overflow_error{"overflow in constructor"};
     }
-
-
-    template<unsigned Bits, bool Safe>
-    uint<Bits, Safe>::uint(const uint<Bits, !Safe>& other)
-        noexcept(is_local) :
-        data{other.data}
-    {}
 
 
     template<unsigned Bits, bool Safe>

@@ -19,18 +19,18 @@ namespace xint {
                 const B& b)
         noexcept
     {
-        using std::views::drop;
-        using std::views::take;
+        using namespace std::ranges;
+        using views::drop;
+        using views::take;
         using std::size;
+        using std::begin;
 
         if (size(a) >= size(b)) {
-            std::ranges::copy(b, a);
-            std::ranges::fill(a | drop(size(b)),
-                              0u);
+            copy(b, begin(a));
+            fill(a | drop(size(b)), 0u);
             return false;
         } else {
-            std::ranges::copy(b | take(size(a)),
-                              a);
+            copy_n(begin(b), size(a), begin(a));
             return utils::is_nonzero(b | drop(size(a)));
         }
     }

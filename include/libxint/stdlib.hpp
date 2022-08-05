@@ -38,11 +38,11 @@ namespace xint {
     template<unsigned_integral U>
     constexpr
     bool
-    has_single_bit(const U& x)
+    has_single_bit(const U& a)
         noexcept
     {
         bool found = false;
-        for (auto d : x.limbs()) {
+        for (auto x : a.limbs()) {
             if (std::has_single_bit(x)) {
                 if (found)
                     return false;
@@ -57,43 +57,66 @@ namespace xint {
 
     template<unsigned_integral U>
     constexpr
+    bool
+    bit_get(const U& a,
+            unsigned i)
+        noexcept
+    {
+        return eval_bit_get(a.limbs(), i);
+    }
+
+
+    template<unsigned_integral U>
+    constexpr
+    bool
+    bit_set(const U& a,
+            unsigned i,
+            bool val)
+        noexcept
+    {
+        return eval_bit_set(a.limbs(), i, val);
+    }
+
+
+    template<unsigned_integral U>
+    constexpr
     U
-    bit_ceil(const U& x)
+    bit_ceil(const U& a)
         noexcept(noexcept(U{}))
     {
-        if (x <= 1)
+        if (a <= 1)
             return limb_type{1};
-        if (has_single_bit(x))
-            return x;
-        U y = limb_type{0};
-        const unsigned top_bit = bit_width(x);
-        assert(top_bit + 1 < size(y.limbs()));
-        eval_bit_set(y.limbs(), top_bit + 1, true);
-        return y;
+        if (has_single_bit(a))
+            return a;
+        U b = limb_type{0};
+        const unsigned top_bit = bit_width(a);
+        eval_bit_set(b.limbs(), top_bit + 1, true);
+        return b;
     }
 
 
     template<unsigned_integral U>
     constexpr
     U
-    bit_floor(const U& x)
+    bit_floor(const U& a)
         noexcept(noexcept(U{}))
     {
-        if (!x)
+        if (!a)
             return limb_type{0};
-        U y = 0;
-        eval_bit_set(y.limbs(), bit_width(x), true);
-        return y;
+        U b = 0;
+        eval_bit_set(b.limbs(), bit_width(a), true);
+        return b;
     }
 
 
     template<unsigned_integral U>
     constexpr
     unsigned
-    bit_width(const U& x)
+    bit_width(const U& a)
         noexcept
     {
-        return U::num_bits - countl_zero(x);
+        //return U::num_bits - countl_zero(a);
+        return eval_bit_width(a.limbs());
     }
 
 
@@ -101,17 +124,17 @@ namespace xint {
     [[nodiscard]]
     constexpr
     U
-    rotl(const U& x,
+    rotl(const U& a,
          int r)
         noexcept(noexcept(U{}))
     {
         if (r == 0)
-            return x;
+            return a;
         if (r < 0)
-            return rotr(x, -r);
-        return safety_cast<U>((safety_cast<false>(x) << r)
+            return rotr(a, -r);
+        return safety_cast<U>((safety_cast<false>(a) << r)
                               |
-                              (safety_cast<false>(x) >> (U::num_bits - r)));
+                              (safety_cast<false>(a) >> (U::num_bits - r)));
     }
 
 
@@ -119,62 +142,62 @@ namespace xint {
     [[nodiscard]]
     constexpr
     U
-    rotr(const U& x,
+    rotr(const U& a,
          int r)
         noexcept(noexcept(U{}))
     {
         if (r == 0)
-            return x;
+            return a;
         if (r < 0)
-            return rotl(x, -r);
-        return safety_cast<U>((safety_cast<false>(x) >> r)
+            return rotl(a, -r);
+        return safety_cast<U>((safety_cast<false>(a) >> r)
                               |
-                              safety_cast<false>(x) << (U::num_bits - r));
+                              safety_cast<false>(a) << (U::num_bits - r));
     }
 
 
     template<unsigned_integral U>
     unsigned
-    countl_zero(const U& x)
+    countl_zero(const U& a)
         noexcept
     {
-        return eval_bit_countl_zero(x.limbs());
+        return eval_bit_countl_zero(a.limbs());
     }
 
 
     template<unsigned_integral U>
     unsigned
-    countl_one(const U& x)
+    countl_one(const U& a)
         noexcept
     {
-        return eval_bit_countl_one(x.limbs());
+        return eval_bit_countl_one(a.limbs());
     }
 
 
     template<unsigned_integral U>
     unsigned
-    countr_zero(const U& x)
+    countr_zero(const U& a)
         noexcept
     {
-        return eval_bit_countr_zero(x.limbs());
+        return eval_bit_countr_zero(a.limbs());
     }
 
 
     template<unsigned_integral U>
     unsigned
-    countr_one(const U& x)
+    countr_one(const U& a)
         noexcept
     {
-        return eval_bit_countr_one(x.limbs());
+        return eval_bit_countr_one(a.limbs());
     }
 
 
     template<unsigned_integral U>
     unsigned
-    popcount(const U& x)
+    popcount(const U& a)
         noexcept
     {
-        return eval_bit_popcount(x.limbs());
+        return eval_bit_popcount(a.limbs());
     }
 
 
@@ -245,14 +268,22 @@ namespace xint {
     }
 
 
-    template<unsigned Bits, bool Safe>
-    std::pair<uint<Bits, Safe>,
-              uint<Bits, Safe>>
-    div(const uint<Bits, Safe>& a,
-        const uint<Bits, Safe>& b)
-    {
-        return eval_div(a, b);
-    }
+   template<xint::unsigned_integral U>
+   U
+   powm(const U& x,
+        const U& y,
+        const U& m)
+   {
+       U r = 1;
+       auto xx = x;
+       const unsigned y_width = bit_width(y);
+       for (unsigned b = 0; b < y_width; ++b) {
+           if (xint::eval_bit_get(y.limbs(), b))
+               r = r * xx % m;
+           xx = xx * xx % m;
+       }
+       return r;
+   }
 
 
 }

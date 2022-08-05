@@ -2,132 +2,190 @@
 #define XINT_EVAL_DIVISION_HPP
 
 #include <cassert>
-#include <cstdlib> // abort()
+#include <iterator>
 #include <ranges>
 #include <stdexcept>
 #include <utility> // pair
 
-#include "eval-comparison.hpp"
-#include "eval-multiplication.hpp"
-#include "eval-subtraction.hpp"
-#include "uint.hpp"
+//#include <iostream>
+
 #include "utils.hpp"
-#include "stdlib.hpp"
+#include "traits.hpp"
+
+#include "eval-addition.hpp"
+#include "eval-assignment.hpp"
+#include "eval-bits.hpp"
+#include "eval-comparison.hpp"
+#include "eval-inc-dec.hpp"
+#include "eval-subtraction.hpp"
 
 
 namespace xint {
 
 
-    // returns { a / b, a % b }
-    template<unsigned Bits, bool Safe>
-    std::pair<uint<Bits, Safe>, uint<Bits, Safe>>
-    eval_div(uint<Bits, Safe> a,
-             const uint<Bits, Safe>& b)
-        noexcept(!Safe)
+    enum class div_status {
+        success,
+        div_by_zero,
+        overflow
+    };
+
+
+    /* Notes:
+     *     - `q`, `r` are the output.
+     *     - `a` and `b` are modified as part of the calculation.
+     *     - `b` must be at least as large as `a` to avoid overflow.
+     */
+    template<limb_range Q,
+             limb_range R,
+             limb_range A,
+             limb_range B>
+    div_status
+    eval_div(Q&& q,
+             R&& r,
+             A&& a,
+             B&& b)
+        noexcept
     {
-        if (!b) {
-            if constexpr (Safe)
-                throw std::domain_error{"division by zero"};
+        if (utils::is_zero(b))
+            return div_status::div_by_zero;
+
+        assert(std::data(q) != std::data(a));
+        assert(std::data(q) != std::data(b));
+
+        std::ranges::fill(q, 0);
+
+        if (eval_compare_three_way(a, b) < 0) {
+            if (eval_assign(r, a))
+                return div_status::overflow;
             else
-                abort();
+                return div_status::success;
         }
 
-        if (!a)
-            return {0, 0};
+        // first, line-up top bit of b with top bit of a
+        unsigned a_width = eval_bit_width(a);
+        unsigned b_width = eval_bit_width(b);
+        unsigned shift = a_width - b_width;
+        if (shift && eval_bit_shift_left<true>(b, b, shift))
+            return div_status::overflow;
 
-        uint<Bits, Safe> q = 0;
+        div_status status = div_status::success;
 
-        const unsigned b_zeros = countl_zero(b);
+        do {
+            unsigned shrink = b_width + shift - a_width;
+            if (shrink > shift)
+                break;
+            if (shrink)
+                eval_bit_shift_right(b, b, shrink);
+            shift -= shrink;
 
-        while (a >= b) {
-            unsigned shift = b_zeros - countl_zero(a);
-            uint<Bits, Safe> sb = b << shift;
-
-            if (eval_sub_inplace(a.limbs(), sb.limbs())) {
-                --shift;
-                sb = b << shift;
-                eval_add_inplace(a.limbs(), sb.limbs());
+            if (eval_sub_inplace(a, b)) {
+                if (!shift--) {
+                    eval_add_inplace(a, b);
+                    break;
+                }
+                eval_bit_shift_right(b, b, 1);
+                eval_add_inplace(a, b);
             }
+            a_width = eval_bit_width(a);
+
             /*
              * This is a more efficient version of
              *     q += uint<Bits>(1) << shift;
              */
             const auto limb_shift = shift / limb_bits;
             const auto bit_shift = shift % limb_bits;
-            const limb_type x = 1u << bit_shift;
-            bool o = eval_add_inplace_limb(q.limbs() | std::views::drop(limb_shift),
-                                           x);
-            assert(!o);
-        }
+            const limb_type x = static_cast<limb_type>(1) << bit_shift;
+            if (eval_add_inplace_limb(q | std::views::drop(limb_shift), x))
+                status = div_status::overflow;
 
-        return {q, a};
+        } while (shift && a_width >= b_width);
+
+        if (eval_assign(r, a))
+            status = div_status::overflow;
+
+        return status;
     }
 
 
-    // returns { a / b, a % b }
-    template<unsigned Bits, bool Safe>
-    std::pair<uint<Bits, Safe>, limb_type>
-    eval_div_limb(uint<Bits, Safe> a,
+    template<limb_range Q,
+             limb_range A>
+    div_status
+    eval_div_limb(Q&& q,
+                  limb_type& r,
+                  A&& a,
                   limb_type b)
-        noexcept(!Safe)
+        noexcept
     {
         using std::views::drop;
         using std::size;
+        using std::empty;
+        using std::begin;
+        using std::end;
+        using std::next;
 
-        if (!b) {
-            if constexpr (Safe)
-                throw std::domain_error{"division by zero"};
-            else
-                abort();
+
+        if (!b)
+            return div_status::div_by_zero;
+
+        assert(std::data(q) != std::data(a));
+
+        std::ranges::fill(q, 0);
+
+        if (eval_compare_three_way_limb(a, b) < 0) {
+            r = empty(a) ? 0 : *begin(a);
+            return div_status::success;
         }
 
-        if (!a)
-            return {0, 0};
-
-        uint<Bits, Safe> q = 0;
         bool a_neg = false;
 
-        unsigned shift = size(a.limbs());
+        unsigned shift = size(a);
+        div_status status = div_status::success;
 
         while (shift-- > 0) {
-            auto cmp = eval_compare_three_way_limb(a.limbs(), b, shift);
-            if (cmp < 0)
+            if (eval_compare_three_way_limb(a, b, shift) < 0)
                 continue;
 
-            wide_limb_type top_a = a.limb(shift);
-            if (shift + 1 < size(a.limbs()))
-                top_a |= wide_limb_type{a.limb(shift + 1)} << limb_bits;
+            auto it = next(begin(a), shift);
+            wide_limb_type top_a = *it;
+            std::advance(it, 1);
+            if (it != end(a))
+                top_a |= static_cast<wide_limb_type>(*it) << limb_bits;
 
             wide_limb_type factor = top_a / b;
             assert((factor >> limb_bits) == 0);
 
             bool d_neg = a_neg;
-            {
-                uint d = static_cast<wide_limb_type>(factor * b);
-                if (eval_sub_inplace(a.limbs() | drop(shift),
-                                     d.limbs())) {
-                    a_neg = !a_neg;
-                    a = -a;
-                }
+            wide_limb_type d = factor * b;
+            const limb_type dd[2] = { static_cast<limb_type>(d),
+                                      static_cast<limb_type>(d >> limb_bits) };
+            if (eval_sub_inplace(a | drop(shift), dd)) {
+                a_neg = !a_neg;
+                // a = -a;
+                eval_bit_flip(a);
+                eval_increment(a);
             }
 
-
+            bool overflow;
             if (d_neg)
-                eval_sub_inplace_limb(q.limbs() | drop(shift), factor);
+                overflow = eval_sub_inplace_limb(q | drop(shift), factor);
             else
-                eval_add_inplace_limb(q.limbs() | drop(shift), factor);
+                overflow = eval_add_inplace_limb(q | drop(shift), factor);
+            if (overflow)
+                status = div_status::overflow;
         }
 
         if (a_neg) {
-            a = -a;
-            eval_add_inplace_limb(a.limbs(), b);
-            --q;
+            // a = -a
+            eval_bit_flip(a);
+            eval_increment(a);
+            eval_add_inplace_limb(a, b);
+            eval_decrement(q);
         }
 
-        return {q, a.limb(0)};
+        r = *begin(a);
+
+        return status;
     }
-
-
 
 }
 

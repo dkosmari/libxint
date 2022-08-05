@@ -43,13 +43,15 @@ namespace xint {
         if (utils::is_zero(limbs()))
             return "0";
 
-        static const char digits[10 + 1] = "0123456789";
+        static const char digits[] = "0123456789";
         std::string result;
         uint n = *this;
-        limb_type d;
+        uint m;
         while (n) {
-            std::tie(n, d) = eval_div_limb(n, 10u);
+            limb_type d;
+            eval_div_limb(m.limbs(), d, n.limbs(), 10);
             result += digits[d];
+            swap(m, n);
         }
         std::ranges::reverse(result);
         return result;
@@ -127,11 +129,13 @@ namespace xint {
 
         std::string result;
         uint n = *this;
-        limb_type d;
+        uint m;
         while (n) {
-            std::tie(n, d) = eval_div_limb(n, base);
+            limb_type d;
+            eval_div_limb(m.limbs(), d, n.limbs(), base);
             auto c = digits[d];
             result += upper ? char(std::toupper(c)) : c;
+            swap(m, n);
         }
         std::ranges::reverse(result);
         return result;

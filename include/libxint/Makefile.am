@@ -12,6 +12,7 @@ xint_HEADERS = \
 	eval-io.hpp \
 	eval-subtraction.hpp \
 	operators.hpp \
+	prime.hpp \
 	random.hpp \
 	stdlib.hpp \
 	storage.hpp \

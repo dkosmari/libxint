@@ -19,15 +19,7 @@
 #include "storage.hpp"
 
 
-#ifndef XINT_ALIGNMENT
-#define XINT_ALIGNMENT 16
-#endif
-
-
 namespace xint {
-
-    template<typename T, std::size_t N>
-    struct alignas(XINT_ALIGNMENT) aligned_array : public std::array<T, N> {};
 
 
     template<unsigned Bits,
@@ -40,7 +32,7 @@ namespace xint {
         static inline constexpr std::size_t num_bits = Bits;
         static inline constexpr std::size_t num_limbs = (Bits-1) / limb_bits + 1;
 
-        using storage_type = auto_storage<aligned_array<limb_type, num_limbs>>;
+        using storage_type = auto_storage<std::array<limb_type, num_limbs>>;
 
         // true when limbs are stored locally, and not in the heap
         static inline constexpr bool is_local = storage_type::is_local;
@@ -49,7 +41,7 @@ namespace xint {
         static inline constexpr bool is_noexcept = Safe || !is_local;
 
         // true when all operations are checked against overflow
-        static inline constexpr bool is_overflow_safe = Safe;
+        static inline constexpr bool is_safe = Safe;
 
 
         using array_type = storage_type::data_type;
@@ -68,14 +60,10 @@ namespace xint {
         constexpr uint() noexcept(is_local) = default;
         constexpr uint(const uint&) noexcept(is_local) = default;
 
-        template<unsigned Bits2>
-        requires(Bits != Bits2)
-        uint(const uint<Bits2, Safe>&)
-            noexcept(is_local && (!Safe || Bits >= Bits2));
-
-        explicit
-        uint(const uint<Bits, !Safe>& other)
-            noexcept(is_local);
+        template<unsigned Bits2, bool Safe2>
+        explicit(!Safe && Safe2) // must be explicit when lifting up safety
+        uint(const uint<Bits2, Safe2>&)
+            noexcept(is_local && (Bits >= Bits2 || !(Safe || Safe2)));
 
 
         template<std::integral I>
@@ -102,16 +90,13 @@ namespace xint {
         utils::uint_t<DestBits> to_uint() const noexcept(!Safe || DestBits >= Bits);
 
         template<std::unsigned_integral U>
-        explicit operator U() const
+        explicit
+        operator U() const
             noexcept(noexcept(to_uint<std::numeric_limits<U>::digits>()));
 
 
-        template<unsigned NewBits>
-        uint<NewBits, Safe> cast() const
-            noexcept(noexcept(uint<NewBits, Safe>(*this)));
-
-
-        explicit operator bool() const noexcept;
+        explicit
+        operator bool() const noexcept;
 
 
         // serialization

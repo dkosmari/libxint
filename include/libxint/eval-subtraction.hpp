@@ -7,6 +7,7 @@
 #include <ranges>
 #include <type_traits>
 
+#include "types.hpp"
 #include "utils.hpp"
 
 
@@ -94,10 +95,10 @@ namespace xint {
 
     // a -= b (single limb)
     // returns true if there's underflow
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     bool
     eval_sub_inplace_limb(A&& a,
-                          std::ranges::range_value_t<A> b)
+                          limb_type b)
         noexcept
     {
         using std::empty;
@@ -124,6 +125,7 @@ namespace xint {
 
         return false;
     }
+
 }
 
 

@@ -50,12 +50,12 @@ namespace xint {
 
 
     template<typename... T>
-    struct are_safe :
+    struct any_are_safe :
         std::bool_constant<(... || is_safe_v<T>)>
     {};
 
     template<typename... T>
-    inline constexpr bool are_safe_v = are_safe<T...>::value;
+    inline constexpr bool any_are_safe_v = any_are_safe<T...>::value;
 
 
 
@@ -98,7 +98,7 @@ namespace std {
              xint::unsigned_integral U2>
     struct common_type<U1, U2> {
         using type = xint::uint<max(U1::num_bits, U2::num_bits),
-                                xint::are_safe_v<U1, U2>>;
+                                xint::any_are_safe_v<U1, U2>>;
     };
 
 

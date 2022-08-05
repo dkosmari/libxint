@@ -1,7 +1,5 @@
 # tests/Makefile.am
 
-$(info TERM="$(TERM)")
-
 AM_DEFAULT_SOURCE_EXT = .cpp
 
 
@@ -23,6 +21,7 @@ check_PROGRAMS = \
 	constructors \
 	division \
 	multiplication \
+	prime \
 	serialization \
 	shifting \
 	stdlib \
