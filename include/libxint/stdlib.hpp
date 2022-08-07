@@ -41,17 +41,7 @@ namespace xint {
     has_single_bit(const U& a)
         noexcept
     {
-        bool found = false;
-        for (auto x : a.limbs()) {
-            if (std::has_single_bit(x)) {
-                if (found)
-                    return false;
-                else
-                    found = true;
-            } else if (x) // more than a single 1 on this limb
-                return false;
-        }
-        return found;
+        return eval_bit_has_single_bit(a);
     }
 
 
@@ -84,13 +74,8 @@ namespace xint {
     bit_ceil(const U& a)
         noexcept(noexcept(U{}))
     {
-        if (a <= 1)
-            return limb_type{1};
-        if (has_single_bit(a))
-            return a;
-        U b = limb_type{0};
-        const unsigned top_bit = bit_width(a);
-        eval_bit_set(b.limbs(), top_bit + 1, true);
+        U b;
+        eval_bit_ceil(b.limbs());
         return b;
     }
 
@@ -101,10 +86,8 @@ namespace xint {
     bit_floor(const U& a)
         noexcept(noexcept(U{}))
     {
-        if (!a)
-            return limb_type{0};
-        U b = 0;
-        eval_bit_set(b.limbs(), bit_width(a), true);
+        U b;
+        eval_bit_floor(b.limbs());
         return b;
     }
 

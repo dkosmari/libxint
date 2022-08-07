@@ -5,15 +5,15 @@
 #include <array>
 #include <ranges>
 
+#include "types.hpp"
 #include "utils.hpp"
 
 
 namespace xint {
 
 
-    template<std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
-    requires utils::same_element_type<A, B>
+    template<limb_range A,
+             limb_range B>
     bool
     eval_assign(A&& a,
                 const B& b)
@@ -22,8 +22,8 @@ namespace xint {
         using namespace std::ranges;
         using views::drop;
         using views::take;
-        using std::size;
-        using std::begin;
+        // using std::size;
+        // using std::begin;
 
         if (size(a) >= size(b)) {
             copy(b, begin(a));

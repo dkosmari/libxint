@@ -12,13 +12,36 @@
 #include <type_traits>
 #include <utility>
 
+#include "types.hpp"
 #include "utils.hpp"
+#include "eval-assignment.hpp"
+#include "eval-comparison.hpp"
 
 
 namespace xint {
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
+    constexpr
+    bool
+    eval_bit_has_single_bit(const A& a)
+        noexcept
+    {
+        bool found = false;
+        for (auto x : a) {
+            if (std::has_single_bit(x)) {
+                if (found)
+                    return false;
+                else
+                    found = true;
+            } else if (x) // more than a single 1 on this limb
+                return false;
+        }
+        return found;
+    }
+
+
+    template<limb_range A>
     [[nodiscard]]
     constexpr
     bool
@@ -26,18 +49,15 @@ namespace xint {
                  unsigned idx)
         noexcept
     {
-        using std::size;
-        using limb_t = std::ranges::range_value_t<A>;
-        constexpr const auto limb_width = std::numeric_limits<limb_t>::digits;
-        const auto limb_idx = idx / limb_width;
-        const auto bit_idx = idx % limb_width;
-        assert(limb_idx < size(a));
-        assert(bit_idx < limb_width);
-        return a[limb_idx] & (limb_t(1) << bit_idx);
+        const auto limb_idx = idx / limb_bits;
+        const auto bit_idx = idx % limb_bits;
+        assert(limb_idx < std::size(a));
+        assert(bit_idx < limb_bits);
+        return a[limb_idx] & (limb_type(1) << bit_idx);
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     constexpr
     void
     eval_bit_set(A&& a,
@@ -45,16 +65,11 @@ namespace xint {
                  bool v)
         noexcept
     {
-        using std::size;
-        using limb_t = std::ranges::range_value_t<A>;
-        constexpr const auto limb_width = std::numeric_limits<limb_t>::digits;
-        const auto total_bits = size(a) * limb_width;
-        const unsigned limb_idx = idx / limb_width;
-        const unsigned bit_idx = idx % limb_width;
-        assert(idx < total_bits);
-        assert(limb_idx < size(a));
-        assert(bit_idx < limb_width);
-        const limb_t mask = limb_t(1) << bit_idx;
+        const unsigned limb_idx = idx / limb_bits;
+        const unsigned bit_idx = idx % limb_bits;
+        assert(limb_idx < std::size(a));
+        assert(bit_idx < limb_bits);
+        const limb_type mask = limb_type(1) << bit_idx;
         if (v)
             a[limb_idx] |= mask;
         else
@@ -62,83 +77,69 @@ namespace xint {
     }
 
 
-    template<std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B,
+    template<limb_range Out,
+             limb_range A,
+             limb_range B,
              typename Op>
-    requires utils::same_element_type<Out, A, B>
     void
     eval_bit_op(Out&& out,
                 const A& a,
                 const B& b,
-                const Op& op)
+                Op op)
         noexcept
     {
         using std::size;
-        using limb_t = std::ranges::range_value_t<Out>;
         for (std::size_t i = 0; i < size(out); ++i) {
-            limb_t ai = i < size(a) ? a[i] : 0;
-            limb_t bi = i < size(b) ? b[i] : 0;
+            limb_type ai = i < size(a) ? a[i] : 0;
+            limb_type bi = i < size(b) ? b[i] : 0;
             out[i] = op(ai, bi);
         }
     }
 
 
-    template<std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
+    template<limb_range Out,
+             limb_range A,
+             limb_range B>
     void
     eval_bit_and(Out&& out,
                  const A& a,
                  const B& b)
         noexcept
     {
-        eval_bit_op(std::forward<Out>(out),
-                    std::forward<A>(a),
-                    std::forward<B>(b),
-                    std::bit_and{});
+        eval_bit_op(out, a, b, std::bit_and{});
     }
 
 
-    template<std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
+    template<limb_range Out,
+             limb_range A,
+             limb_range B>
     void
     eval_bit_or(Out&& out,
                 const A& a,
                 const B& b)
         noexcept
     {
-        eval_bit_op(std::forward<Out>(out),
-                    std::forward<A>(a),
-                    std::forward<B>(b),
-                    std::bit_or{});
-
+        eval_bit_op(out, a, b, std::bit_or{});
     }
 
 
-    template<std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
+    template<limb_range Out,
+             limb_range A,
+             limb_range B>
     void
     eval_bit_xor(Out&& out,
                  const A& a,
                  const B& b)
         noexcept
     {
-        eval_bit_op(std::forward<Out>(out),
-                    std::forward<A>(a),
-                    std::forward<B>(b),
-                    std::bit_xor{});
-
+        eval_bit_op(out, a, b, std::bit_xor{});
     }
 
 
     // TODO: check if overflow logic is correct
-    template<bool Check = false,
-             std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A>
-    requires utils::same_element_type<Out, A>
+    template<bool Check,
+             limb_range Out,
+             limb_range A>
     bool
     eval_bit_shift_left(Out&& out,
                         const A& a,
@@ -146,10 +147,7 @@ namespace xint {
         noexcept
     {
         using std::size;
-        using limb_t = std::ranges::range_value_t<Out>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
-        const auto out_bits = limb_width * size(out);
+        const auto out_bits = limb_bits * size(out);
 
         if (b >= out_bits) {
             bool overflow = false;
@@ -160,14 +158,14 @@ namespace xint {
             return overflow;
         }
 
-        const auto limb_offset = b / limb_width;
+        const auto limb_offset = b / limb_bits;
         assert(limb_offset < size(out));
-        const auto bit_offset  = b % limb_width;
+        const auto bit_offset  = b % limb_bits;
 
-        wide_limb_t aj = size(out) - limb_offset < size(a) + 1
-                       ? a[size(out) - limb_offset - 1] : 0;
+        wide_limb_type aj = size(out) - limb_offset < size(a) + 1
+                          ? a[size(out) - limb_offset - 1] : 0;
 
-        bool overflow = aj >> (limb_width - bit_offset);
+        bool overflow = aj >> (limb_bits - bit_offset);
         // note: must check before writing to out
         if constexpr (Check)
             if (!overflow)
@@ -177,14 +175,14 @@ namespace xint {
                         break;
                     }
 
-        aj <<= limb_width;
+        aj <<= limb_bits;
         for (std::size_t i = size(out) - 1; i + 1 > 0; --i) {
             if (i >= limb_offset + 1 && i < size(a) + limb_offset + 1) {
-                wide_limb_t ajj = a[i - limb_offset - 1];
+                wide_limb_type ajj = a[i - limb_offset - 1];
                 aj |= ajj;
             }
-            out[i] = static_cast<limb_t>(aj >> (limb_width - bit_offset));
-            aj <<= limb_width;
+            out[i] = static_cast<limb_type>(aj >> (limb_bits - bit_offset));
+            aj <<= limb_bits;
         }
 
         if constexpr (!Check)
@@ -193,10 +191,9 @@ namespace xint {
     }
 
 
-    template<bool Check = false,
-             std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A>
-    requires utils::same_element_type<Out, A>
+    template<bool Check,
+             limb_range Out,
+             limb_range A>
     bool
     eval_bit_shift_right(Out&& out,
                          const A& a,
@@ -204,10 +201,7 @@ namespace xint {
         noexcept
     {
         using std::size;
-        using limb_t = std::ranges::range_value_t<Out>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
-        const auto a_bits = limb_width * size(a);
+        const auto a_bits = limb_bits * size(a);
 
         if (b >= a_bits) {
             bool overflow = false;
@@ -218,12 +212,12 @@ namespace xint {
             return overflow;
         }
 
-        const auto limb_offset = b / limb_width;
-        const auto bit_offset  = b % limb_width;
+        const auto limb_offset = b / limb_bits;
+        const auto bit_offset  = b % limb_bits;
 
-        wide_limb_t aj = limb_offset < size(a) ? a[limb_offset] : 0;
+        wide_limb_type aj = limb_offset < size(a) ? a[limb_offset] : 0;
 
-        bool overflow = aj & ((wide_limb_t{1} << bit_offset) - 1);
+        bool overflow = aj & ((wide_limb_type{1} << bit_offset) - 1);
         // note: must check before writing to out
         if constexpr (Check) {
             if (!overflow)
@@ -242,11 +236,11 @@ namespace xint {
 
         for (std::size_t i = 0; i < size(out); ++i) {
             if (i + limb_offset + 1 < size(a)) {
-                wide_limb_t ajj = a[i + limb_offset + 1];
-                aj |= ajj << limb_width;
+                wide_limb_type ajj = a[i + limb_offset + 1];
+                aj |= ajj << limb_bits;
             }
-            out[i] = static_cast<limb_t>(aj >> bit_offset);
-            aj >>= limb_width;
+            out[i] = static_cast<limb_type>(aj >> bit_offset);
+            aj >>= limb_bits;
         }
 
         if constexpr (!Check)
@@ -256,24 +250,22 @@ namespace xint {
     }
 
 
-    template<std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A>
-    requires utils::same_element_type<Out, A>
+    template<limb_range Out,
+             limb_range A>
     void
     eval_bit_flip(Out&& out,
                   const A& a)
         noexcept
     {
         using std::size;
-        using limb_t = std::ranges::range_value_t<Out>;
         for (std::size_t i = 0; i < size(out); ++i) {
-            limb_t v = i < size(a) ? a[i] : 0;
+            limb_type v = i < size(a) ? a[i] : 0;
             out[i] = ~v;
         }
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     void
     eval_bit_flip(A&& a)
         noexcept
@@ -283,79 +275,130 @@ namespace xint {
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     unsigned
     eval_bit_countl_zero(const A& a)
         noexcept
     {
         unsigned zeros = 0;
         for (auto v : a | std::views::reverse) {
-            zeros += std::countl_zero(v);
-            if (v)
+            if (!v)
+                zeros += limb_bits;
+            else {
+                zeros += std::countl_zero(v);
                 break;
+            }
         }
         return zeros;
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     unsigned
     eval_bit_countl_one(const A& a)
         noexcept
     {
         unsigned ones = 0;
         for (auto v : a | std::views::reverse) {
-            ones += std::countl_one(v);
-            if (~v)
+            if (!~v)
+                ones += limb_bits;
+            else {
+                ones += std::countl_one(v);
                 break;
+            }
         }
         return ones;
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     unsigned
     eval_bit_countr_zero(const A& a)
         noexcept
     {
         unsigned zeros = 0;
         for (auto v : a) {
-            zeros += std::countr_zero(v);
-            if (v)
+            if (!v)
+                zeros += limb_bits;
+            else {
+                zeros += std::countr_zero(v);
                 break;
+            }
         }
         return zeros;
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     unsigned
     eval_bit_countr_one(const A& a)
         noexcept
     {
         unsigned ones = 0;
         for (auto v : a) {
-            ones += std::countr_one(v);
-            if (~v)
+            if (!~v)
+                ones += limb_bits;
+            else {
+                ones += std::countr_one(v);
                 break;
+            }
         }
         return ones;
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range Out,
+             limb_range A>
+    constexpr
+    void
+    eval_bit_ceil(Out&& out,
+                  const A& a)
+        noexcept
+    {
+        using std::begin;
+        using std::size;
+
+        std::ranges::fill(out, 0);
+        if (eval_compare_three_way_limb(a, 1) <= 0) {
+            *begin(out) = 1;
+            return;
+        }
+        if (eval_bit_has_single_bit(a)) {
+            eval_assign(out, a);
+            return;
+        }
+        const auto top_bit = eval_bit_width(a);
+        assert(top_bit + 1 < size(a));
+        eval_bit_set(out, top_bit + 1, true);
+    }
+
+
+    template<limb_range Out,
+             limb_range A>
+    constexpr
+    void
+    eval_bit_floor(Out&& out,
+                   const A& a)
+        noexcept
+    {
+        std::ranges::fill(out, 0);
+        if (utils::is_zero(a))
+            return;
+        eval_bit_set(out, eval_bit_width(a), true);
+    }
+
+
+    template<limb_range A>
     unsigned
     eval_bit_width(const A& a)
         noexcept
     {
         using std::size;
-        using limb_t = std::ranges::range_value_t<A>;
-        constexpr auto bits_per_limb = std::numeric_limits<limb_t>::digits;
-        return bits_per_limb * size(a) - eval_bit_countl_zero(a);
+        return limb_bits * size(a) - eval_bit_countl_zero(a);
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     constexpr
     unsigned
     eval_bit_popcount(const A& a)
@@ -363,11 +406,10 @@ namespace xint {
     {
         using std::begin;
         using std::end;
-        using limb_t = std::ranges::range_value_t<A>;
         return std::transform_reduce(begin(a), end(a),
                                      0u,
                                      std::plus<>{},
-                                     std::popcount<limb_t>);
+                                     std::popcount<limb_type>);
     }
 
 

@@ -4,13 +4,11 @@
 #include <cassert>
 #include <iterator>
 #include <ranges>
-#include <stdexcept>
 #include <utility> // pair
 
-//#include <iostream>
-
-#include "utils.hpp"
+#include "types.hpp"
 #include "traits.hpp"
+#include "utils.hpp"
 
 #include "eval-addition.hpp"
 #include "eval-assignment.hpp"
@@ -46,7 +44,10 @@ namespace xint {
              B&& b)
         noexcept
     {
-        if (utils::is_zero(b))
+        using std::size;
+
+        const unsigned b_width = eval_bit_width(b);
+        if (!b_width) // same as checking if b is zero
             return div_status::div_by_zero;
 
         assert(std::data(q) != std::data(a));
@@ -61,12 +62,27 @@ namespace xint {
                 return div_status::success;
         }
 
+
+        // optimization: b is a power of two: just right-shift a
+        if (eval_bit_has_single_bit(b)) {
+            const unsigned shift = b_width - 1;
+
+            // turn b into a mask by subtracting 1
+            eval_sub_inplace_limb(b, 1);
+            eval_bit_and(r, a, b);
+            eval_bit_shift_right<false>(a, a, shift);
+            if (eval_assign(q, a))
+                return div_status::overflow;
+            return div_status::success;
+        }
+
         // first, line-up top bit of b with top bit of a
         unsigned a_width = eval_bit_width(a);
-        unsigned b_width = eval_bit_width(b);
         unsigned shift = a_width - b_width;
-        if (shift && eval_bit_shift_left<true>(b, b, shift))
-            return div_status::overflow;
+        if (shift) {
+            bool error = eval_bit_shift_left<true>(b, b, shift);
+            assert(!error);
+        }
 
         div_status status = div_status::success;
 
@@ -75,7 +91,7 @@ namespace xint {
             if (shrink > shift)
                 break;
             if (shrink)
-                eval_bit_shift_right(b, b, shrink);
+                eval_bit_shift_right<false>(b, b, shrink);
             shift -= shrink;
 
             if (eval_sub_inplace(a, b)) {
@@ -83,10 +99,11 @@ namespace xint {
                     eval_add_inplace(a, b);
                     break;
                 }
-                eval_bit_shift_right(b, b, 1);
+                eval_bit_shift_right<false>(b, b, 1);
                 eval_add_inplace(a, b);
             }
-            a_width = eval_bit_width(a);
+            // we can avoid looking at limbs known to be zero
+            a_width = eval_bit_width(a | std::views::take((a_width - 1) / limb_bits + 1));
 
             /*
              * This is a more efficient version of

@@ -10,7 +10,9 @@ xint_HEADERS = \
 	eval-division.hpp \
 	eval-inc-dec.hpp \
 	eval-io.hpp \
+	eval-multiplication.hpp \
 	eval-subtraction.hpp \
+	limits.hpp \
 	operators.hpp \
 	prime.hpp \
 	random.hpp \

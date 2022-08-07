@@ -5,6 +5,7 @@
 #include <limits>
 #include <ranges>
 
+#include "types.hpp"
 #include "utils.hpp"
 
 
@@ -15,10 +16,9 @@ namespace xint {
      * TESTED
      * @return true if there's overflow
      */
-    template<std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
-    requires utils::same_element_type<Out, A, B>
+    template<limb_range Out,
+             limb_range A,
+             limb_range B>
     bool
     eval_add(Out&& out,
              const A& a,
@@ -30,18 +30,14 @@ namespace xint {
         using std::views::drop;
         using std::size;
 
-        using limb_t = std::ranges::range_value_t<Out>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
-
-        wide_limb_t sum = 0;
+        wide_limb_type sum = 0;
         for (std::size_t i = 0; i < size(out); ++i) {
             if (i < size(a))
                 sum += a[i];
             if (i >= shift && i < size(b) + shift)
                 sum += b[i - shift];
-            out[i] = static_cast<limb_t>(sum);
-            sum >>= limb_width;
+            out[i] = static_cast<limb_type>(sum);
+            sum >>= limb_bits;
         }
         if (sum)
             return true;
@@ -66,9 +62,8 @@ namespace xint {
 
     // a += b
     // returns true if there's overflow
-    template<std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
-    requires utils::same_element_type<A, B>
+    template<limb_range A,
+             limb_range B>
     bool
     eval_add_inplace(A&& a,
                      const B& b) noexcept
@@ -77,20 +72,16 @@ namespace xint {
         using std::empty;
         using utils::is_nonzero;
 
-        using limb_t = std::ranges::range_value_t<A>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
-
         if (empty(a))
             return is_nonzero(b);
 
-        wide_limb_t sum = 0;
+        wide_limb_type sum = 0;
         for (std::size_t i = 0; i < size(a); ++i) {
             sum += a[i];
             if (i < size(b))
                 sum += b[i];
-            a[i] = static_cast<limb_t>(sum);
-            sum >>= limb_width;
+            a[i] = static_cast<limb_type>(sum);
+            sum >>= limb_bits;
         }
         if (sum)
             return true;
@@ -105,25 +96,21 @@ namespace xint {
 
     // a += b (single limb)
     // returns true if there's overflow
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     bool
     eval_add_inplace_limb(A&& a,
-                          std::ranges::range_value_t<A> b) noexcept
+                          limb_type b) noexcept
     {
         using std::empty;
-
-        using limb_t = std::ranges::range_value_t<A>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
 
         if (empty(a))
             return b;
 
-        wide_limb_t sum = b;
-        for (limb_t& ai : a) {
+        wide_limb_type sum = b;
+        for (auto& ai : a) {
             sum += ai;
-            ai = static_cast<limb_t>(sum);
-            sum >>= limb_width;
+            ai = static_cast<limb_type>(sum);
+            sum >>= limb_bits;
             if (!sum)
                 break; // early termination when there's no carry
         }

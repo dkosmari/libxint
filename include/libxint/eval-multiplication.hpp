@@ -14,16 +14,12 @@ namespace xint {
 
 
     // a *= b (single limb)
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     bool
     eval_mul_inplace_limb(A&& a,
-                          std::ranges::range_value_t<A> b)
+                          limb_type b)
         noexcept
     {
-        using limb_t = std::ranges::range_value_t<A>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
-
         if (b == 0) {
             std::ranges::fill(a, 0);
             return false;
@@ -31,30 +27,25 @@ namespace xint {
         if (utils::is_zero(a))
             return false;
 
-        wide_limb_t sum = 0;
+        wide_limb_type sum = 0;
         for (auto& ai : a) {
             sum += ai * wide_limb_type{b};
-            ai = static_cast<limb_t>(sum);
-            sum >>= limb_width;
+            ai = static_cast<limb_type>(sum);
+            sum >>= limb_bits;
         }
         return sum;
     }
 
 
     // out = a * b (single limb)
-    template<std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A>
-    requires utils::same_element_type<Out, A>
+    template<limb_range Out,
+             limb_range A>
     bool
     eval_mul_limb(Out& out,
                   const A& a,
-                  std::ranges::range_value_t<Out> b) noexcept
+                  limb_type b) noexcept
     {
         using std::size;
-
-        using limb_t = std::ranges::range_value_t<Out>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
 
         assert(&a[0] != &out[0]);
 
@@ -67,12 +58,12 @@ namespace xint {
             return false;
         }
 
-        wide_limb_t sum = 0;
+        wide_limb_type sum = 0;
         for (std::size_t i = 0; i < size(out); ++i) {
             if (i < size(a))
-                sum += a[i] * wide_limb_t{b};
-            out[i] = static_cast<limb_t>(sum);
-            sum >>= limb_width;
+                sum += a[i] * wide_limb_type{b};
+            out[i] = static_cast<limb_type>(sum);
+            sum >>= limb_bits;
         }
         if (sum)
             return true;
@@ -87,10 +78,9 @@ namespace xint {
 
 
     // out = a * b
-    template<std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
-    requires utils::same_element_type<Out, A, B>
+    template<limb_range Out,
+             limb_range A,
+             limb_range B>
     bool
     eval_mul_simple(Out& out,
                     const A& a,
@@ -98,10 +88,6 @@ namespace xint {
     {
         using std::views::drop;
         using std::size;
-
-        using limb_t = std::ranges::range_value_t<Out>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
 
         assert(&a[0] != &out[0]);
         assert(&b[0] != &out[0]);
@@ -114,11 +100,11 @@ namespace xint {
         bool overflow = false;
         for (std::size_t i = 0; i < size(out); ++i) {
             for (std::size_t j = 0; j <= i; ++j) {
-                wide_limb_t x = j < size(a) ? a[j] : 0;
-                wide_limb_t y = i - j < size(b) ? b[i - j] : 0;
-                wide_limb_t prod = x * y;
-                limb_t prod_lo = static_cast<limb_t>(prod);
-                limb_t prod_hi = static_cast<limb_t>(prod >> limb_width);
+                wide_limb_type x = j < size(a) ? a[j] : 0;
+                wide_limb_type y = i - j < size(b) ? b[i - j] : 0;
+                wide_limb_type prod = x * y;
+                limb_type prod_lo = static_cast<limb_type>(prod);
+                limb_type prod_hi = static_cast<limb_type>(prod >> limb_bits);
                 if (eval_add_inplace_limb(out | drop(i), prod_lo))
                     overflow = true;
                 if (eval_add_inplace_limb(out | drop(i + 1), prod_hi))

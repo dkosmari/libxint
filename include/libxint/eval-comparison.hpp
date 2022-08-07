@@ -5,15 +5,15 @@
 #include <compare>
 #include <ranges>
 
+#include "types.hpp"
 #include "utils.hpp"
 
 
 namespace xint {
 
 
-    template<std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
-    requires utils::same_element_type<A, B>
+    template<limb_range A,
+             limb_range B>
     bool
     eval_compare_equal(const A& a,
                        const B& b)
@@ -31,9 +31,8 @@ namespace xint {
     }
 
 
-    template<std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
-    requires utils::same_element_type<A, B>
+    template<limb_range A,
+             limb_range B>
     std::strong_ordering
     eval_compare_three_way(const A& a,
                            const B& b,
@@ -58,10 +57,10 @@ namespace xint {
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     std::strong_ordering
     eval_compare_three_way_limb(const A& a,
-                                std::ranges::range_value_t<A> b,
+                                limb_type b,
                                 unsigned shift = 0)
         noexcept
     {

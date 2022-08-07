@@ -5,15 +5,15 @@
 #include <concepts>
 #include <ranges>
 
+#include "types.hpp"
 #include "utils.hpp"
 
 
 namespace xint {
 
 
-    template<std::ranges::contiguous_range A,
-             std::ranges::contiguous_range Old>
-    requires utils::same_element_type<A, Old>
+    template<limb_range A,
+             limb_range Old>
     bool
     eval_increment(A&& a,
                    Old&& old)
@@ -32,7 +32,7 @@ namespace xint {
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     bool
     eval_increment(A&& a)
         noexcept
@@ -44,9 +44,8 @@ namespace xint {
     }
 
 
-    template<std::ranges::contiguous_range A,
-             std::ranges::contiguous_range Old>
-    requires utils::same_element_type<A, Old>
+    template<limb_range A,
+             limb_range Old>
     bool
     eval_decrement(A&& a,
                    Old& old)
@@ -65,7 +64,7 @@ namespace xint {
     }
 
 
-    template<std::ranges::contiguous_range A>
+    template<limb_range A>
     bool
     eval_decrement(A&& a)
         noexcept

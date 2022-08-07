@@ -15,10 +15,9 @@ namespace xint {
 
     // out = a - b
     // returns true if there's underflow
-    template<std::ranges::contiguous_range Out,
-             std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
-    requires utils::same_element_type<Out, A, B>
+    template<limb_range Out,
+             limb_range A,
+             limb_range B>
     bool
     eval_sub(Out&& out,
              const A& a,
@@ -30,12 +29,7 @@ namespace xint {
         using std::views::drop;
         using std::size;
 
-        using limb_t = std::ranges::range_value_t<Out>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        using signed_wide_limb_t = std::make_signed_t<wide_limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
-
-        signed_wide_limb_t diff = 0;
+        signed_wide_limb_type diff = 0;
         const auto common_size = std::max({size(out),
                                            size(a),
                                            size(b) + shift});
@@ -45,8 +39,8 @@ namespace xint {
             if (i >= shift && i < size(b) + shift)
                 diff -= b[i - shift];
             if (i < size(out))
-                out[i] = static_cast<limb_t>(diff);
-            diff >>= limb_width;
+                out[i] = static_cast<limb_type>(diff);
+            diff >>= limb_bits;
         }
         return diff;
     }
@@ -54,9 +48,8 @@ namespace xint {
 
     // a -= b
     // returns true if there's underflow
-    template<std::ranges::contiguous_range A,
-             std::ranges::contiguous_range B>
-    requires utils::same_element_type<A, B>
+    template<limb_range A,
+             limb_range B>
     bool
     eval_sub_inplace(A&& a,
                      const B& b)
@@ -66,21 +59,16 @@ namespace xint {
         using std::empty;
         using std::size;
 
-        using limb_t = std::ranges::range_value_t<A>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        using signed_wide_limb_t = std::make_signed_t<wide_limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
-
         if (empty(a))
             return is_nonzero(b);
 
-        signed_wide_limb_t diff = 0;
+        signed_wide_limb_type diff = 0;
         for (std::size_t i = 0; i < size(a); ++i) {
             diff += a[i];
             if (i < size(b))
                 diff -= b[i];
-            a[i] = static_cast<limb_t>(diff);
-            diff >>= limb_width;
+            a[i] = static_cast<limb_type>(diff);
+            diff >>= limb_bits;
         }
         if (diff)
             return true;
@@ -103,19 +91,14 @@ namespace xint {
     {
         using std::empty;
 
-        using limb_t = std::ranges::range_value_t<A>;
-        using wide_limb_t = utils::wider_uint_t<limb_t>;
-        using signed_wide_limb_t = std::make_signed_t<wide_limb_t>;
-        constexpr auto limb_width = std::numeric_limits<limb_t>::digits;
-
         if (empty(a))
             return b;
 
-        signed_wide_limb_t diff = -signed_wide_limb_t{b};
-        for (limb_t& ai : a) {
+        signed_wide_limb_type diff = -signed_wide_limb_type{b};
+        for (limb_type& ai : a) {
             diff += ai;
-            ai = static_cast<limb_t>(diff);
-            diff >>= limb_width;
+            ai = static_cast<limb_type>(diff);
+            diff >>= limb_bits;
             if (!diff)
                 break; // early termination when there's no borrow
         }

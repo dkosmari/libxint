@@ -1,9 +1,11 @@
 #ifndef XINT_TYPES_HPP
 #define XINT_TYPES_HPP
 
+#include <concepts>
 #include <cstdint>
 #include <limits>
 #include <ranges>
+#include <type_traits>
 
 
 namespace xint {
@@ -39,8 +41,10 @@ namespace xint {
 
 
     template<typename T>
-    concept limb_range = std::ranges::contiguous_range<T>;
-
+    concept limb_range = requires {
+        requires std::ranges::contiguous_range<T>;
+        requires std::same_as<std::ranges::range_value_t<T>, limb_type>;
+    };
 
 }
 
