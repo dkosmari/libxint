@@ -34,25 +34,26 @@ namespace xint {
 
     // Division; not an operator, but more handy than the / and % operators
 
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    std::pair<U1, U2>
-    div(U1 a,
-        U2 b)
-        noexcept(noexcept(std::pair<U1, U2>{}) && !any_are_safe_v<U1, U2>)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    std::pair<UA, UB>
+    div(UA a,
+        UB b)
     {
-        std::pair<U1, U2> result;
+        std::pair<UA, UB> result;
+        uint<UB::num_bits + limb_bits> r;
         auto s = eval_div(result.first.limbs(),
-                          result.second.limbs(),
+                          r.limbs(),
                           a.limbs(),
                           b.limbs());
-        if constexpr (any_are_safe_v<U1, U2>) {
+        if constexpr (any_are_safe_v<UA, UB>) {
             if (s == div_status::div_by_zero)
                 throw std::domain_error{"division by zero"};
             if (s == div_status::overflow)
                 throw std::overflow_error{"overflow in division"};
         } else if (s == div_status::div_by_zero)
             abort();
+        result.second = r;
         return result;
     }
 
@@ -62,13 +63,12 @@ namespace xint {
     std::pair<U, I>
     div(U a,
         I b)
-        noexcept(noexcept(std::pair<U, I>{}) && noexcept(uint(b)) && !is_safe_v<U>)
     {
         using Iu = std::make_unsigned_t<I>;
         if constexpr (sizeof(Iu) <= sizeof(limb_type)) {
             limb_type r;
             std::pair<U, I> result;
-            auto s = eval_div_limb(result.first, r, a, b);
+            auto s = eval_div_limb(result.first.limbs(), r, a.limbs(), b);
             result.second = r;
 
             if constexpr (is_safe_v<U>) {
@@ -80,8 +80,7 @@ namespace xint {
                 abort();
             return result;
         } else {
-            auto bb = uint(b);
-            auto res = div(a, bb);
+            auto res = div(a, uint(b));
             return { res.first, static_cast<Iu>(res.second) };
         }
     }
@@ -91,7 +90,6 @@ namespace xint {
     std::pair<I, U>
     div(I a,
         U b)
-        noexcept(noexcept(std::pair<I, U>{}) && noexcept(uint(a)) && !is_safe_v<U>)
     {
         using Iu = std::make_unsigned_t<I>;
         auto aa = uint(a);
@@ -109,7 +107,6 @@ namespace xint {
 
     // a = b
 
-    // covered
     template<unsigned Bits, bool Safe>
     template<unsigned Bits2, bool Safe2>
     uint<Bits, Safe>&
@@ -130,22 +127,20 @@ namespace xint {
 
     // a += b
 
-    // covered
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    U1&
-    operator +=(U1& a,
-                const U2& b)
-        noexcept(!any_are_safe_v<U1, U2>)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    UA&
+    operator +=(UA& a,
+                const UB& b)
+        noexcept(!any_are_safe_v<UA, UB>)
     {
         bool overflow = eval_add_inplace(a.limbs(), b.limbs());
-        if constexpr (any_are_safe_v<U1, U2>)
+        if constexpr (any_are_safe_v<UA, UB>)
             if (overflow)
                 throw std::overflow_error{"overflow in +="};
         return a;
     }
 
-    // covered
     template<unsigned_integral U,
              std::integral I>
     U&
@@ -159,16 +154,15 @@ namespace xint {
 
     // a -= b
 
-    // covered
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    U1&
-    operator -=(U1& a,
-                const U2& b)
-        noexcept(!any_are_safe_v<U1, U2>)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    UA&
+    operator -=(UA& a,
+                const UB& b)
+        noexcept(!any_are_safe_v<UA, UB>)
     {
         bool overflow = eval_sub_inplace(a.limbs(), b.limbs());
-        if constexpr (any_are_safe_v<U1, U2>)
+        if constexpr (any_are_safe_v<UA, UB>)
             if (overflow)
                 throw std::overflow_error{"overflow in -="};
         return a;
@@ -190,22 +184,21 @@ namespace xint {
     // a *= b
 
     // covered
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    U1&
-    operator *=(U1& a,
-                const U2& b)
-        noexcept(noexcept(U1{}) && !any_are_safe_v<U1, U2>)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    UA&
+    operator *=(UA& a,
+                const UB& b)
+        noexcept(noexcept(UA{}) && !any_are_safe_v<UA, UB>)
     {
-        U1 c;
+        UA c;
         bool overflow = eval_mul_simple(c.limbs(), a.limbs(), b.limbs());
-        if constexpr (any_are_safe_v<U1, U2>)
+        if constexpr (any_are_safe_v<UA, UB>)
             if (overflow)
                 throw std::overflow_error{"overflow in *="};
         return a = std::move(c);
     }
 
-    // covered
     template<unsigned_integral U,
              std::integral I>
     U&
@@ -220,11 +213,11 @@ namespace xint {
 
     // a /= b
 
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    U1&
-    operator /=(U1& a,
-                const U2& b)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    UA&
+    operator /=(UA& a,
+                const UB& b)
         noexcept(noexcept(a = div(a, b).first))
     {
         return a = div(a, b).first;
@@ -243,11 +236,11 @@ namespace xint {
 
     // a %= b
 
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    U1&
-    operator %=(U1& a,
-                const U2& b)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    UA&
+    operator %=(UA& a,
+                const UB& b)
         noexcept(noexcept(a = div(a, b).second))
     {
         return a = div(a, b).second;
@@ -428,18 +421,18 @@ namespace xint {
 
 
     // a + b
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    std::common_type_t<U1, U2>
-    operator +(const U1& a,
-               const U2& b)
-        noexcept(noexcept(std::common_type_t<U1, U2>{}) && !any_are_safe_v<U1, U2>)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    std::common_type_t<UA, UB>
+    operator +(const UA& a,
+               const UB& b)
+        noexcept(noexcept(std::common_type_t<UA, UB>{}) && !any_are_safe_v<UA, UB>)
     {
-        std::common_type_t<U1, U2> result;
+        std::common_type_t<UA, UB> result;
         bool overflow = eval_add(result.limbs(),
                                  a.limbs(),
                                  b.limbs());
-        if constexpr (any_are_safe_v<U1, U2>)
+        if constexpr (any_are_safe_v<UA, UB>)
             if (overflow)
                 throw std::overflow_error{"overflow in +"};
         return result;
@@ -467,18 +460,18 @@ namespace xint {
 
 
     // a - b
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    std::common_type_t<U1, U2>
-    operator -(const U1& a,
-               const U2& b)
-        noexcept(noexcept(std::common_type_t<U1, U2>{}) && !any_are_safe_v<U1, U2>)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    std::common_type_t<UA, UB>
+    operator -(const UA& a,
+               const UB& b)
+        noexcept(noexcept(std::common_type_t<UA, UB>{}) && !any_are_safe_v<UA, UB>)
     {
-        std::common_type_t<U1, U2> result;
+        std::common_type_t<UA, UB> result;
         bool underflow = eval_sub(result.limbs(),
                                   a.limbs(),
                                   b.limbs());
-        if constexpr (any_are_safe_v<U1, U2>)
+        if constexpr (any_are_safe_v<UA, UB>)
             if (underflow)
                 throw std::overflow_error{"overflow in -"};
         return result;
@@ -506,18 +499,18 @@ namespace xint {
 
 
     // a * b
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    std::common_type_t<U1, U2>
-    operator *(const U1& a,
-               const U2& b)
-        noexcept(noexcept(std::common_type_t<U1, U2>{}) && !any_are_safe_v<U1, U2>)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    std::common_type_t<UA, UB>
+    operator *(const UA& a,
+               const UB& b)
+        noexcept(noexcept(std::common_type_t<UA, UB>{}) && !any_are_safe_v<UA, UB>)
     {
-        std::common_type_t<U1, U2> result;
+        std::common_type_t<UA, UB> result;
         bool overflow = eval_mul_simple(result.limbs(),
                                         a.limbs(),
                                         b.limbs());
-        if constexpr (any_are_safe_v<U1, U2>)
+        if constexpr (any_are_safe_v<UA, UB>)
             if (overflow)
                 throw std::overflow_error{"overflow in *"};
         return result;
@@ -562,11 +555,11 @@ namespace xint {
 
     // a / b
 
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    U1
-    operator /(const U1& a,
-               const U2& b)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    UA
+    operator /(const UA& a,
+               const UB& b)
         noexcept(noexcept(div(a, b).first))
     {
         return div(a, b).first;
@@ -584,11 +577,11 @@ namespace xint {
 
 
     // a % b
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    U1
-    operator %(const U1& a,
-               const U2& b)
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    UA
+    operator %(const UA& a,
+               const UB& b)
         noexcept(noexcept(div(a, b).second))
     {
         return div(a, b).second;
@@ -620,42 +613,42 @@ namespace xint {
 
 
     // a & b
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    std::common_type_t<U1, U2>
-    operator &(const U1& a,
-               const U2& b)
-        noexcept(noexcept(std::common_type_t<U1, U2>{}))
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    std::common_type_t<UA, UB>
+    operator &(const UA& a,
+               const UB& b)
+        noexcept(noexcept(std::common_type_t<UA, UB>{}))
     {
-        std::common_type_t<U1, U2> c;
+        std::common_type_t<UA, UB> c;
         eval_bit_and(c.limbs(), a.limbs(), b.limbs());
         return c;
     }
 
 
     // a | b
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    std::common_type_t<U1, U2>
-    operator |(const U1& a,
-               const U2& b)
-        noexcept(noexcept(std::common_type_t<U1, U2>{}))
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    std::common_type_t<UA, UB>
+    operator |(const UA& a,
+               const UB& b)
+        noexcept(noexcept(std::common_type_t<UA, UB>{}))
     {
-        std::common_type_t<U1, U2> c;
+        std::common_type_t<UA, UB> c;
         eval_bit_or(c.limbs(), a.limbs(), b.limbs());
         return c;
     }
 
 
     // a ^ b
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    std::common_type_t<U1, U2>
-    operator ^(const U1& a,
-               const U2& b)
-        noexcept(noexcept(std::common_type_t<U1, U2>{}))
+    template<unsigned_integral UA,
+             unsigned_integral UB>
+    std::common_type_t<UA, UB>
+    operator ^(const UA& a,
+               const UB& b)
+        noexcept(noexcept(std::common_type_t<UA, UB>{}))
     {
-        std::common_type_t<U1, U2> c;
+        std::common_type_t<UA, UB> c;
         eval_bit_xor(c.limbs(), a.limbs(), b.limbs());
         return c;
     }
@@ -703,14 +696,14 @@ namespace xint {
     /* ---------- */
 
 
-    template<unsigned_integral U1,
-             unsigned_integral U2>
+    template<unsigned_integral UA,
+             unsigned_integral UB>
     bool
-    operator ==(const U1& a,
-                const U2& b)
+    operator ==(const UA& a,
+                const UB& b)
         noexcept
     {
-        if constexpr (U1::num_bits == U2::num_bits)
+        if constexpr (UA::num_bits == UB::num_bits)
             return a.limbs() == b.limbs();
         else
             return eval_compare_equal(a.limbs(), b.limbs());
@@ -739,15 +732,15 @@ namespace xint {
     }
 
 
-    template<unsigned_integral U1,
-             unsigned_integral U2>
+    template<unsigned_integral UA,
+             unsigned_integral UB>
     std::strong_ordering
-    operator <=>(const U1& a,
-                 const U2& b)
+    operator <=>(const UA& a,
+                 const UB& b)
         noexcept
     {
         using std::views::reverse;
-        if constexpr (U1::num_bits == U2::num_bits)
+        if constexpr (UA::num_bits == UB::num_bits)
             return std::lexicographical_compare_three_way(rbegin(a.limbs()),
                                                           rend(a.limbs()),
                                                           rbegin(b.limbs()),

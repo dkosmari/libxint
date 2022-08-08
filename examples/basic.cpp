@@ -4,9 +4,13 @@
 #include <vector>
 
 #include <libxint/uint.hpp>
+#include <libxint/literals.hpp>
 
 
 using namespace std;
+
+using namespace xint::literals;
+
 
 using x32 = xint::uint<32>;
 using x32s = xint::uint<32, true>;
@@ -37,7 +41,7 @@ foo(const xint::uint<N>& a)
 
 int main()
 {
-    cout << boolalpha;
+    cout << boolalpha << setfill('0');
 
     // default constructor leaves it uninitialized
     x256 a;
@@ -155,11 +159,39 @@ int main()
     cout << "27: a = " << a << endl;
     a *= 3;
     cout << "28: a = " << a << endl;
-    /*
+
     a /= xint::uint(2);
     cout << "29: a = " << a << endl;
     a /= 7;
     cout << "30: a = " << a << endl;
-    */
+
+    a %= 2;
+    cout << "31: a = " << a << endl;
+
+    a =  0b0101;
+    b = x256{"0b1100"};
+    a &= b;
+    cout << "32: a = 0b" << setw(4) << a.to_bin() << endl;
+
+    a = 0b0101;
+    b = x256("1100", 2);
+    a |= b;
+    cout << "33: a = 0b" << setw(4) << a.to_bin() << endl;
+
+    a = 0b0101;
+    b = 0b1100_u;
+    a ^= b;
+    cout << "34: a = 0b" << setw(4) << a.to_bin() << endl;
+
+
+    {
+        auto x = 0x100000000_u;
+        cout << "35: x = " << hex << x << dec << endl;
+        cout << "    bits: " << x.num_bits << endl;
+
+        auto y = 1024_u;
+        cout << "36: y = " << y << endl;
+        cout << "    bits: " << y.num_bits << endl;
+    }
 
 }

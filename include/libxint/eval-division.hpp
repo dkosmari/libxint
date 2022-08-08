@@ -30,8 +30,9 @@ namespace xint {
 
     /* Notes:
      *     - `q`, `r` are the output.
-     *     - `a` and `b` are modified as part of the calculation.
-     *     - `b` must be at least as large as `a` to avoid overflow.
+     *     - `a` and `r` are modified as part of the calculation.
+     *     - `q` must be at least as large as `a` to avoid overflow.
+     *     - `r` must have one mre limb than `b`.
      */
     template<limb_range Q,
              limb_range R,
@@ -45,6 +46,8 @@ namespace xint {
         noexcept
     {
         using std::size;
+        using std::views::drop;
+        using std::views::take;
 
         const unsigned b_width = eval_bit_width(b);
         if (!b_width) // same as checking if b is zero
@@ -52,6 +55,8 @@ namespace xint {
 
         assert(std::data(q) != std::data(a));
         assert(std::data(q) != std::data(b));
+        assert(std::data(r) != std::data(b));
+        assert(size(r) > size(b));
 
         std::ranges::fill(q, 0);
 
@@ -77,42 +82,41 @@ namespace xint {
         }
 
         // first, line-up top bit of b with top bit of a
+        auto bit_offset = [](unsigned s) -> unsigned { return s % limb_bits; };
+        auto limb_offset = [](unsigned s) -> unsigned { return s / limb_bits; };
+
         unsigned a_width = eval_bit_width(a);
-        unsigned shift = a_width - b_width;
-        if (shift) {
-            bool error = eval_bit_shift_left<true>(b, b, shift);
-            assert(!error);
-        }
+        unsigned shift;
 
         div_status status = div_status::success;
 
         do {
-            unsigned shrink = b_width + shift - a_width;
-            if (shrink > shift)
-                break;
-            if (shrink)
-                eval_bit_shift_right<false>(b, b, shrink);
-            shift -= shrink;
+            shift = a_width - b_width;
+            // note: we set `r = b << shift` so we don't modify b
+            // r is guaranteed to have one more limb than b, so it never overflows
+            eval_bit_shift_left<false>(r, b, bit_offset(shift));
 
-            if (eval_sub_inplace(a, b)) {
-                if (!shift--) {
-                    eval_add_inplace(a, b);
+            if (eval_sub_inplace(a | drop(limb_offset(shift)), r)) {
+                // we subtracted too much, try to make b smaller
+                if (!shift) {
+                    // if can't make b smaller, just rollback the subtraction,
+                    // and break the loop
+                    eval_add_inplace(a | drop(limb_offset(shift)), r);
                     break;
                 }
-                eval_bit_shift_right<false>(b, b, 1);
-                eval_add_inplace(a, b);
+                --shift;
+                eval_bit_shift_left<false>(r, b, bit_offset(shift));
+                eval_add_inplace(a | drop(limb_offset(shift)), r);
             }
             // we can avoid looking at limbs known to be zero
-            a_width = eval_bit_width(a | std::views::take((a_width - 1) / limb_bits + 1));
+            a_width = eval_bit_width(a | take(limb_offset(a_width - 1) + 1));
 
             /*
              * This is a more efficient version of
              *     q += uint<Bits>(1) << shift;
              */
-            const auto limb_shift = shift / limb_bits;
-            const auto bit_shift = shift % limb_bits;
-            const limb_type x = static_cast<limb_type>(1) << bit_shift;
-            if (eval_add_inplace_limb(q | std::views::drop(limb_shift), x))
+            const limb_type x = static_cast<limb_type>(1) << bit_offset(shift);
+            if (eval_add_inplace_limb(q | drop(limb_offset(shift)), x))
                 status = div_status::overflow;
 
         } while (shift && a_width >= b_width);

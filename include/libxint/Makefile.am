@@ -13,6 +13,7 @@ xint_HEADERS = \
 	eval-multiplication.hpp \
 	eval-subtraction.hpp \
 	limits.hpp \
+	literals.hpp \
 	operators.hpp \
 	prime.hpp \
 	random.hpp \
