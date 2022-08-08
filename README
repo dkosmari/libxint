@@ -45,6 +45,7 @@ of desired bits. It can be used as any ordinary unsigned integer:
     #include <libxint/uint.hpp>
 
     using namespace std;
+    using namespace xint::literals;
 
     int main()
     {
@@ -55,6 +56,8 @@ of desired bits. It can be used as any ordinary unsigned integer:
         ++x;
         cout << x << endl;
         cout << popcount(x) << endl;
+        auto y = 0xdeadbeef0000babecafe0000dec0de_uint;
+        cout << hex << y << dec << " has " << y.num_bits << " bits." << endl;
     }
 
 
@@ -64,18 +67,13 @@ of desired bits. It can be used as any ordinary unsigned integer:
 
 This extended integer is implemented through multiple native integers, called limbs.
 The size of each limb can be controlled by defining the `XINT_LIMB_SIZE` macro. Valid
-sizes are 8, 16 and 32 (which is the default.) For instance:
+sizes are 8, 16 and 32 (default is 32.) For instance:
 
     g++ -std=c++20 -DXINT_LIMB_SIZE=16 my-program.cpp
 
-The limbs can be accessed directly through the `limbs` member.
+The limbs can be accessed directly through the `limbs()` and `limb(i)` member functions.
 
-NOTE: do not specify a number of bits that's not a multiple of the limb size. Examples
-of invalid sizes are:
-
-    `uint<31>`
-    `uint<16>` when `XINT_LIMB_SIZE=32`
-
+NOTE: it's not possible to specify a bit size that is not a multiple of the limb size.
 No attempt is made to mask out the "excess" bits (for performance reasons) so the results
-of all operations will be inconsistent.
+of all operations will be inconsistent. A `static_assert()` will prevent incorrect use.
 

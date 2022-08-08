@@ -30,14 +30,6 @@ operator <<(std::ostream& out,
 }
 
 
-template<unsigned N>
-void
-foo(const xint::uint<N>& a)
-{
-    cout << "foo(" << a << ")" << endl;
-}
-
-
 
 int main()
 {
@@ -174,24 +166,14 @@ int main()
     cout << "32: a = 0b" << setw(4) << a.to_bin() << endl;
 
     a = 0b0101;
-    b = x256("1100", 2);
+    b = x256{"1100", 2};
     a |= b;
     cout << "33: a = 0b" << setw(4) << a.to_bin() << endl;
 
     a = 0b0101;
-    b = 0b1100_u;
+    b = 0b1100_uint;
     a ^= b;
     cout << "34: a = 0b" << setw(4) << a.to_bin() << endl;
 
-
-    {
-        auto x = 0x100000000_u;
-        cout << "35: x = " << hex << x << dec << endl;
-        cout << "    bits: " << x.num_bits << endl;
-
-        auto y = 1024_u;
-        cout << "36: y = " << y << endl;
-        cout << "    bits: " << y.num_bits << endl;
-    }
 
 }

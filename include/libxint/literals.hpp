@@ -8,7 +8,7 @@
 #include "uint.hpp"
 
 
-namespace xint::literals {
+namespace xint {
 
     namespace detail {
 
@@ -99,16 +99,20 @@ namespace xint::literals {
     } // detail
 
 
-    template<char... Cs>
-    auto
-    operator ""_u()
-    {
-        using Parser = detail::parser<Cs...>;
-        using Data = Parser::data;
-        constexpr unsigned Base = Parser::base;
-        constexpr unsigned bits = detail::num_bits_v<Base, Data::size()>;
-        using U = uint<detail::round_to_limb_v<bits>, false>;
-        return U{detail::extract(Data{}), Base};
+    namespace literals {
+
+        template<char... Cs>
+        auto
+        operator ""_uint()
+        {
+            using Parser = detail::parser<Cs...>;
+            using Data = Parser::data;
+            constexpr unsigned Base = Parser::base;
+            constexpr unsigned bits = detail::num_bits_v<Base, Data::size()>;
+            using U = uint<detail::round_to_limb_v<bits>, false>;
+            return U{detail::extract(Data{}), Base};
+        }
+
     }
 
 }

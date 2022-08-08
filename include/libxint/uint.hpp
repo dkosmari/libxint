@@ -130,12 +130,14 @@ namespace xint {
 
 }
 
-
+// member functions are implemented here
 #include "uint-constructors.hpp"
 #include "uint-conversions.hpp"
 #include "uint-serialization.hpp"
 
+// the rest is implemented here
 #include "limits.hpp"
+#include "literals.hpp"
 #include "operators.hpp"
 #include "random.hpp"
 #include "stdlib.hpp"

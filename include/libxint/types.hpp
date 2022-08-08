@@ -33,6 +33,7 @@ namespace xint {
     using limb_type             = std::uint32_t;
     using wide_limb_type        = std::uint64_t;
     using signed_wide_limb_type = std::int64_t;
+
 #endif
 
     static_assert(sizeof(wide_limb_type) > sizeof(limb_type));
