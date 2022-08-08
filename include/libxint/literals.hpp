@@ -63,7 +63,6 @@ namespace xint {
             using data = std::integer_sequence<char, Cs...>;
         };
 
-
         template<char... Cs>
         struct parser<'0', 'b', Cs...> {
             static constexpr inline unsigned base = 2;

@@ -38,7 +38,7 @@ namespace xint {
         constexpr       data_type& operator  *()       noexcept { return *ptr; }
 
         constexpr const data_type* operator ->() const noexcept { return ptr->get(); }
-        constexpr       data_type& operator ->()       noexcept { return ptr->get(); }
+        constexpr       data_type* operator ->()       noexcept { return ptr->get(); }
 
         std::unique_ptr<data_type> ptr = std::make_unique<data_type>();
     };
@@ -64,8 +64,8 @@ namespace xint {
         constexpr const data_type& operator *() const  noexcept { return data; }
         constexpr       data_type& operator *()        noexcept { return data; }
 
-        constexpr const data_type& operator ->() const noexcept { return &data; }
-        constexpr       data_type& operator ->()       noexcept { return &data; }
+        constexpr const data_type* operator ->() const noexcept { return &data; }
+        constexpr       data_type* operator ->()       noexcept { return &data; }
 
         data_type data;
 
@@ -81,6 +81,7 @@ namespace xint {
         using std::swap;
         swap(a.data, b.data);
     }
+
 
 
     template<typename T>
