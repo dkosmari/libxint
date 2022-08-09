@@ -1,12 +1,14 @@
 #ifndef XINT_UINT_CASTING_HPP
 #define XINT_UINT_CASTING_HPP
 
+#include <cmath>
 #include <stdexcept>
 #include <string>
 #include <utility> // forward()
 
 #include "traits.hpp"
 #include "uint.hpp"
+#include "eval-bits.hpp"
 
 
 namespace xint {
@@ -57,15 +59,34 @@ namespace xint {
     }
 
 
-    template<unsigned_integral U1,
-             unsigned_integral U2>
-    requires(U1::num_bits == U2::num_bits)
+    template<unsigned Bits, bool Safe>
+    template<std::floating_point F>
+    uint<Bits, Safe>::operator F()
+        const noexcept
+    {
+        const int w = eval_bit_width(limbs());
+        std::uint64_t mant = 0;
+        if (w > 64) {
+            uint<64, false> tmp;
+            eval_bit_shift_right<false>(tmp.limbs(), limbs(), w - 64);
+            mant = tmp.to_uint<64>();
+        } else {
+            mant = to_uint<64>() << (64 - w);
+        }
+        F f = mant;
+        return std::ldexp(f, w - 64);
+    }
+
+
+    template<unsigned_integral To,
+             unsigned_integral From>
+    requires(std::remove_cvref_t<To>::num_bits == std::remove_cvref_t<From>::num_bits)
     constexpr
-    U1&
-    safety_cast(U2&& a)
+    To&
+    safety_cast(From&& a)
         noexcept
     {
-        return reinterpret_cast<U1&>(a);
+        return reinterpret_cast<To&>(a);
     }
 
 

@@ -12,11 +12,9 @@
 namespace xint {
 
 
-    template<limb_range A,
-             limb_range Old>
     bool
-    eval_increment(A&& a,
-                   Old&& old)
+    eval_increment(limb_range auto&& a,
+                   limb_range auto&& old)
         noexcept
     {
         using std::size;
@@ -32,9 +30,8 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     bool
-    eval_increment(A&& a)
+    eval_increment(limb_range auto&& a)
         noexcept
     {
         for (auto& v : a)
@@ -44,11 +41,9 @@ namespace xint {
     }
 
 
-    template<limb_range A,
-             limb_range Old>
     bool
-    eval_decrement(A&& a,
-                   Old& old)
+    eval_decrement(limb_range auto&& a,
+                   limb_range auto& old)
         noexcept
     {
         using std::size;
@@ -64,9 +59,8 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     bool
-    eval_decrement(A&& a)
+    eval_decrement(limb_range auto&& a)
         noexcept
     {
         for (auto& v : a)

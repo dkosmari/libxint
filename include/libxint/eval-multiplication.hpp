@@ -14,9 +14,8 @@ namespace xint {
 
 
     // a *= b (single limb)
-    template<limb_range A>
     bool
-    eval_mul_inplace_limb(A&& a,
+    eval_mul_inplace_limb(limb_range auto&& a,
                           limb_type b)
         noexcept
     {
@@ -38,11 +37,9 @@ namespace xint {
 
 
     // out = a * b (single limb)
-    template<limb_range Out,
-             limb_range A>
     bool
-    eval_mul_limb(Out& out,
-                  const A& a,
+    eval_mul_limb(limb_range auto&& out,
+                  const limb_range auto& a,
                   limb_type b) noexcept
     {
         using std::size;
@@ -78,13 +75,10 @@ namespace xint {
 
 
     // out = a * b
-    template<limb_range Out,
-             limb_range A,
-             limb_range B>
     bool
-    eval_mul_simple(Out& out,
-                    const A& a,
-                    const B& b) noexcept
+    eval_mul_simple(limb_range auto&& out,
+                    const limb_range auto& a,
+                    const limb_range auto& b) noexcept
     {
         using std::views::drop;
         using std::size;

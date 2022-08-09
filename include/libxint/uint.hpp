@@ -29,22 +29,22 @@ namespace xint {
         static_assert(Bits > 0);
         static_assert(Bits % limb_bits == 0, "total bit width must be a multiple of limb bits");
 
-        static inline constexpr std::size_t num_bits = Bits;
-        static inline constexpr std::size_t num_limbs = (Bits-1) / limb_bits + 1;
+        static inline constexpr unsigned num_bits = Bits;
+        static inline constexpr unsigned num_limbs = (Bits-1) / limb_bits + 1;
 
-        using storage_type = auto_storage<std::array<limb_type, num_limbs>>;
+        using array_type = std::array<limb_type, num_limbs>;
 
-        // true when limbs are stored locally, and not in the heap
-        static inline constexpr bool is_local = storage_type::is_local;
+        static inline constexpr bool is_local = sizeof(array_type) <= XINT_MAX_LOCAL_BYTES;
+
+        using storage_type = std::conditional_t<is_local,
+                                                local_storage<array_type>,
+                                                heap_storage<array_type>>;
 
         // true when operations cannot throw exceptions at all
         static inline constexpr bool is_noexcept = Safe || !is_local;
 
         // true when all operations are checked against overflow
         static inline constexpr bool is_safe = Safe;
-
-
-        using array_type = storage_type::data_type;
 
         storage_type data;
 
@@ -80,6 +80,7 @@ namespace xint {
         // assignment
 
         template<unsigned Bits2, bool Safe2>
+        requires(Safe || !Safe2) // can only be used to add safety, not to remove
         uint& operator =(const uint<Bits2, Safe2>& other)
             noexcept((Bits == Bits2) || (!Safe && !Safe2));
 
@@ -97,6 +98,11 @@ namespace xint {
 
         explicit
         operator bool() const noexcept;
+
+
+        template<std::floating_point F>
+        explicit
+        operator F() const noexcept;
 
 
         // serialization

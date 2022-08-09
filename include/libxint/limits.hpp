@@ -4,7 +4,6 @@
 #include <cmath> // log10()
 #include <limits>
 
-#include "traits.hpp"
 #include "uint.hpp"
 
 
@@ -25,10 +24,10 @@ namespace std {
         static constexpr bool is_iec559 = false;
         static constexpr bool is_bounded = true;
         static constexpr bool is_modulo = true;
-        static constexpr int digits = xint::uint<Bits, Safe>::num_limbs; // 2
+        static constexpr int digits = Bits;
         static constexpr int digits10 = Bits * log10(2);
         static constexpr int max_digits10 = 0;
-        static constexpr auto radix = xint::wide_limb_type{1} << xint::limb_bits;
+        static constexpr auto radix = 2;
         static constexpr int min_exponent = 0;
         static constexpr int min_exponent10 = 0;
         static constexpr int max_exponent = 0;

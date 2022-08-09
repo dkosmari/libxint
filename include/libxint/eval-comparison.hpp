@@ -12,11 +12,9 @@
 namespace xint {
 
 
-    template<limb_range A,
-             limb_range B>
     bool
-    eval_compare_equal(const A& a,
-                       const B& b)
+    eval_compare_equal(const limb_range auto& a,
+                       const limb_range auto& b)
         noexcept
     {
         using std::size;
@@ -31,11 +29,9 @@ namespace xint {
     }
 
 
-    template<limb_range A,
-             limb_range B>
     std::strong_ordering
-    eval_compare_three_way(const A& a,
-                           const B& b,
+    eval_compare_three_way(const limb_range auto& a,
+                           const limb_range auto& b,
                            unsigned shift = 0)
         noexcept
     {
@@ -57,9 +53,8 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     std::strong_ordering
-    eval_compare_three_way_limb(const A& a,
+    eval_compare_three_way_limb(const limb_range auto& a,
                                 limb_type b,
                                 unsigned shift = 0)
         noexcept

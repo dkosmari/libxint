@@ -15,13 +15,10 @@ namespace xint {
 
     // out = a - b
     // returns true if there's underflow
-    template<limb_range Out,
-             limb_range A,
-             limb_range B>
     bool
-    eval_sub(Out&& out,
-             const A& a,
-             const B& b,
+    eval_sub(limb_range auto&& out,
+             const limb_range auto& a,
+             const limb_range auto& b,
              unsigned shift = 0)
         noexcept
     {
@@ -48,11 +45,9 @@ namespace xint {
 
     // a -= b
     // returns true if there's underflow
-    template<limb_range A,
-             limb_range B>
     bool
-    eval_sub_inplace(A&& a,
-                     const B& b)
+    eval_sub_inplace(limb_range auto&& a,
+                     const limb_range auto& b)
         noexcept
     {
         using utils::is_nonzero;
@@ -83,9 +78,8 @@ namespace xint {
 
     // a -= b (single limb)
     // returns true if there's underflow
-    template<limb_range A>
     bool
-    eval_sub_inplace_limb(A&& a,
+    eval_sub_inplace_limb(limb_range auto&& a,
                           limb_type b)
         noexcept
     {

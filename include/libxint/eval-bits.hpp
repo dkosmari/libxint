@@ -21,10 +21,9 @@
 namespace xint {
 
 
-    template<limb_range A>
     constexpr
     bool
-    eval_bit_has_single_bit(const A& a)
+    eval_bit_has_single_bit(const limb_range auto& a)
         noexcept
     {
         bool found = false;
@@ -41,11 +40,10 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     [[nodiscard]]
     constexpr
     bool
-    eval_bit_get(const A& a,
+    eval_bit_get(const limb_range auto& a,
                  unsigned idx)
         noexcept
     {
@@ -57,10 +55,9 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     constexpr
     void
-    eval_bit_set(A&& a,
+    eval_bit_set(limb_range auto&& a,
                  unsigned idx,
                  bool v)
         noexcept
@@ -77,15 +74,11 @@ namespace xint {
     }
 
 
-    template<limb_range Out,
-             limb_range A,
-             limb_range B,
-             typename Op>
     void
-    eval_bit_op(Out&& out,
-                const A& a,
-                const B& b,
-                Op op)
+    eval_bit_op(limb_range auto&& out,
+                const limb_range auto& a,
+                const limb_range auto& b,
+                auto op)
         noexcept
     {
         using std::size;
@@ -97,39 +90,30 @@ namespace xint {
     }
 
 
-    template<limb_range Out,
-             limb_range A,
-             limb_range B>
     void
-    eval_bit_and(Out&& out,
-                 const A& a,
-                 const B& b)
+    eval_bit_and(limb_range auto&& out,
+                 const limb_range auto& a,
+                 const limb_range auto& b)
         noexcept
     {
         eval_bit_op(out, a, b, std::bit_and{});
     }
 
 
-    template<limb_range Out,
-             limb_range A,
-             limb_range B>
     void
-    eval_bit_or(Out&& out,
-                const A& a,
-                const B& b)
+    eval_bit_or(limb_range auto&& out,
+                const limb_range auto& a,
+                const limb_range auto& b)
         noexcept
     {
         eval_bit_op(out, a, b, std::bit_or{});
     }
 
 
-    template<limb_range Out,
-             limb_range A,
-             limb_range B>
     void
-    eval_bit_xor(Out&& out,
-                 const A& a,
-                 const B& b)
+    eval_bit_xor(limb_range auto&& out,
+                 const limb_range auto& a,
+                 const limb_range auto& b)
         noexcept
     {
         eval_bit_op(out, a, b, std::bit_xor{});
@@ -137,12 +121,10 @@ namespace xint {
 
 
     // TODO: check if overflow logic is correct
-    template<bool Check,
-             limb_range Out,
-             limb_range A>
+    template<bool Check>
     bool
-    eval_bit_shift_left(Out&& out,
-                        const A& a,
+    eval_bit_shift_left(limb_range auto&& out,
+                        const limb_range auto& a,
                         unsigned b)
         noexcept
     {
@@ -191,12 +173,10 @@ namespace xint {
     }
 
 
-    template<bool Check,
-             limb_range Out,
-             limb_range A>
+    template<bool Check>
     bool
-    eval_bit_shift_right(Out&& out,
-                         const A& a,
+    eval_bit_shift_right(limb_range auto&& out,
+                         const limb_range auto& a,
                          unsigned b)
         noexcept
     {
@@ -250,11 +230,10 @@ namespace xint {
     }
 
 
-    template<limb_range Out,
-             limb_range A>
+    constexpr
     void
-    eval_bit_flip(Out&& out,
-                  const A& a)
+    eval_bit_flip(limb_range auto&& out,
+                  const limb_range auto& a)
         noexcept
     {
         using std::size;
@@ -265,9 +244,9 @@ namespace xint {
     }
 
 
-    template<limb_range A>
+    constexpr
     void
-    eval_bit_flip(A&& a)
+    eval_bit_flip(limb_range auto&& a)
         noexcept
     {
         for (auto& v : a)
@@ -275,9 +254,8 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     unsigned
-    eval_bit_countl_zero(const A& a)
+    eval_bit_countl_zero(const limb_range auto& a)
         noexcept
     {
         unsigned zeros = 0;
@@ -293,9 +271,8 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     unsigned
-    eval_bit_countl_one(const A& a)
+    eval_bit_countl_one(const limb_range auto& a)
         noexcept
     {
         unsigned ones = 0;
@@ -311,9 +288,8 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     unsigned
-    eval_bit_countr_zero(const A& a)
+    eval_bit_countr_zero(const limb_range auto& a)
         noexcept
     {
         unsigned zeros = 0;
@@ -329,9 +305,8 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     unsigned
-    eval_bit_countr_one(const A& a)
+    eval_bit_countr_one(const limb_range auto& a)
         noexcept
     {
         unsigned ones = 0;
@@ -347,12 +322,10 @@ namespace xint {
     }
 
 
-    template<limb_range Out,
-             limb_range A>
     constexpr
     void
-    eval_bit_ceil(Out&& out,
-                  const A& a)
+    eval_bit_ceil(limb_range auto&& out,
+                  const limb_range auto& a)
         noexcept
     {
         using std::begin;
@@ -373,12 +346,10 @@ namespace xint {
     }
 
 
-    template<limb_range Out,
-             limb_range A>
     constexpr
     void
-    eval_bit_floor(Out&& out,
-                   const A& a)
+    eval_bit_floor(limb_range auto&& out,
+                   const limb_range auto& a)
         noexcept
     {
         std::ranges::fill(out, 0);
@@ -388,9 +359,8 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     unsigned
-    eval_bit_width(const A& a)
+    eval_bit_width(const limb_range auto& a)
         noexcept
     {
         using std::size;
@@ -398,10 +368,9 @@ namespace xint {
     }
 
 
-    template<limb_range A>
     constexpr
     unsigned
-    eval_bit_popcount(const A& a)
+    eval_bit_popcount(const limb_range auto& a)
         noexcept
     {
         using std::begin;

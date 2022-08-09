@@ -34,7 +34,8 @@ namespace xint {
     {};
 
     template<typename T>
-    inline constexpr bool is_unsigned_integral_v = is_unsigned_integral<T>::value;
+    inline constexpr bool is_unsigned_integral_v =
+        is_unsigned_integral<std::remove_cvref_t<T>>::value;
 
 
 

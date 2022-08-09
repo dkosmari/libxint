@@ -12,11 +12,9 @@
 namespace xint {
 
 
-    template<limb_range A,
-             limb_range B>
     bool
-    eval_assign(A&& a,
-                const B& b)
+    eval_assign(limb_range auto&& a,
+                const limb_range auto& b)
         noexcept
     {
         using namespace std::ranges;

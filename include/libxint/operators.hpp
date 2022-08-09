@@ -109,6 +109,7 @@ namespace xint {
 
     template<unsigned Bits, bool Safe>
     template<unsigned Bits2, bool Safe2>
+    requires(Safe || !Safe2)
     uint<Bits, Safe>&
     uint<Bits, Safe>::operator =(const uint<Bits2, Safe2>& other)
         noexcept((Bits == Bits2) || (!Safe && !Safe2))
@@ -602,6 +603,7 @@ namespace xint {
 
     // ~ a
     template<unsigned_integral U>
+    constexpr
     U
     operator ~(const U& a)
         noexcept(noexcept(U{}))

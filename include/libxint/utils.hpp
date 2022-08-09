@@ -71,12 +71,6 @@ namespace xint::utils {
     using wider_uint_t = uint_t<2 * std::numeric_limits<U>::digits>;
 
 
-    // template<typename T, typename ... U>
-    // concept same_element_type = (std::same_as<std::ranges::range_value_t<T>,
-    //                              std::ranges::range_value_t<U>> &&... );
-
-
-
 
 } // namespace xint::utils
 

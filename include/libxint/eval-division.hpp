@@ -34,15 +34,11 @@ namespace xint {
      *     - `q` must be at least as large as `a` to avoid overflow.
      *     - `r` must have one mre limb than `b`.
      */
-    template<limb_range Q,
-             limb_range R,
-             limb_range A,
-             limb_range B>
     div_status
-    eval_div(Q&& q,
-             R&& r,
-             A&& a,
-             B&& b)
+    eval_div(limb_range auto&& q,
+             limb_range auto&& r,
+             limb_range auto&& a,
+             limb_range auto&& b)
         noexcept
     {
         using std::size;
@@ -128,12 +124,10 @@ namespace xint {
     }
 
 
-    template<limb_range Q,
-             limb_range A>
     div_status
-    eval_div_limb(Q&& q,
+    eval_div_limb(limb_range auto&& q,
                   limb_type& r,
-                  A&& a,
+                  limb_range auto&& a,
                   limb_type b)
         noexcept
     {

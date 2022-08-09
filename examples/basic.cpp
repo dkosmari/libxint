@@ -2,6 +2,8 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include <sstream>
+#include <string>
 
 #include <libxint/uint.hpp>
 #include <libxint/literals.hpp>
@@ -30,6 +32,22 @@ operator <<(std::ostream& out,
 }
 
 
+template<xint::unsigned_integral U,
+         typename... Args>
+string
+info(const U& u,
+     Args... args)
+{
+    ostringstream out;
+    (out << ... << args)
+        << u << dec << " (uint<" << u.num_bits << "," << boolalpha << u.is_safe << ">)";
+    return out.str();
+}
+
+
+
+#define SHOW cout << "line " << __LINE__ << ": "
+
 
 int main()
 {
@@ -40,42 +58,61 @@ int main()
 
     // can assign from native integers
     a = 10u;
-    cout << "1: a = " << a << endl;
+    SHOW << "a = " << info(a) << endl;
 
     // can
     a = -1; // negative values always are converted to unsigned before being extended
-    cout << "2: a = " << hex << a << dec << endl;
+    SHOW << "a = " << info(a, hex) << endl;
 
     x256 b = 7; // can construct from integer
-    cout << "3: b = " << b << endl;
+    SHOW << "b = " << info(b) << endl;
 
     // can construct from strings and a base
     x256 c{"110011", 2};
-    cout << "4: c = " << c << endl;
+    SHOW << "c = " << info(c) << endl;
 
     // native integers can be converted using a deduction guide
     auto d = xint::uint(5);
-    cout << "5: d = " << d << " has parameters <"
-         << d.num_bits << ", " << d.is_safe << ">" << endl;
+    SHOW << "d = " << info(d) << endl;
 
 
     // converting to native integers
     a = 10;
-    cout << "6: a = " << a.to_uint<64>() << endl;
-    cout << "7: a = " << static_cast<uint64_t>(a) << endl;
+    SHOW << "a = " << a.to_uint<64>() << endl;
+    SHOW << "a = " << static_cast<uint64_t>(a) << endl;
 
 
     // can be converted to bool in conditionals
     if (a)
-        cout << "8: a is non-zero: " << a << endl;
+        SHOW << "a is non-zero: " << info(a) << endl;
     a = 0;
     if (!a)
-        cout << "9: a is zero: " << a << endl;
+        SHOW << "a is zero: " << info(a) << endl;
 
 
     // with no overflow checking, has same semantics as native unsigned integers
     a = a - 1;
-    cout << "10: a = 0x" << hex << a << dec << endl;
+    SHOW << "a = 0x" << info(a, hex) << endl;
+
+
+    // conversion to floating point
+    {
+        a = x256{1} << 10;
+        SHOW << "converting " << info(a) << " to floating point" << endl;
+        SHOW << "   float: " << float(a) << endl;
+        SHOW << "  double: " << double(a) << endl;
+
+        a = x256{1} << 100;
+        SHOW << "converting " << info(a) << " to floating point" << endl;
+        SHOW << "   float: " << float(a) << endl;
+        SHOW << "  double: " << double(a) << endl;
+
+        a = x256{1} << 200;
+        SHOW << "converting " << info(a) << " to floating point" << endl;
+        SHOW << "   float: " << float(a) << endl;
+        SHOW << "  double: " << double(a) << endl;
+
+    }
 
 
     // safe arithmetic
@@ -86,7 +123,7 @@ int main()
         aa + a; // this will overflow
     }
     catch (overflow_error& e) {
-        cout << "11: safe version throws: " << e.what() << endl;
+        SHOW << "safe version throws: " << e.what() << endl;
     }
 
     try {
@@ -99,81 +136,95 @@ int main()
         // There's no guarantee the output variable has a correct value
         // when an exception occurs.
         // That is, there are no strong exception guarantees.
-        cout << "12: (after exception) a = " << a << endl;
+        SHOW << "(after exception) a = " << info(a) << endl;
+    }
+
+    {
+        // safety can be changed with safety_cast<>()
+        const x256s safe_a = 1;
+        x256 unsafe_a = safety_cast<false>(safe_a);
+        SHOW << "unsafe_a = " << info(unsafe_a) << endl;
+        // alternative use of safety_cast<>():
+        x256 unsafe_aa = safety_cast<const x256>(safe_a);
+        SHOW << "unsafe_aa = " << info(unsafe_aa) << endl;
+
+        const x256 unsafe_b = 2;
+        x256s safe_b = unsafe_b; // no need to cast when adding safety
+        SHOW << "safe_b = " << info(safe_b) << endl;
     }
 
 
     // serialization/formatting:
     a = 0xdeadbeef;
-    cout << "13: a in binary = " << a.to_bin() << endl;
-    cout << "14: a in decimal = " << a.to_dec() << endl;
-    cout << "15: a in lower case hex = " << a.to_hex() << endl;
-    cout << "16: a in upper case hex = " << a.to_hex(true) << endl;
-    cout << "17: a in octal = " << a.to_oct() << endl;
-    cout << "18: a in base 36 = " << a.to_string(36) << endl;
+    SHOW << "a in binary = " << a.to_bin() << endl;
+    SHOW << "a in decimal = " << a.to_dec() << endl;
+    SHOW << "a in lower case hex = " << a.to_hex() << endl;
+    SHOW << "a in upper case hex = " << a.to_hex(true) << endl;
+    SHOW << "a in octal = " << a.to_oct() << endl;
+    SHOW << "a in base 36 = " << a.to_string(36) << endl;
 
     // conversion to binary
     vector<unsigned char> buffer(a.num_bits / 8);
 
     a.to_little_endian(buffer);
-    cout << "19: little endian: " << buffer << endl;
+    SHOW << "little endian: " << buffer << endl;
 
     a.to_big_endian(buffer);
-    cout << "20: big endian:    " << buffer << endl;
+    SHOW << "big endian:    " << buffer << endl;
 
 
     x256 e{"0x123456789abcdef0"};
     x32 f = e; // truncation happens
-    cout << "21: f = " << hex << f << dec << endl;
+    SHOW << "f = " << info(f, hex) << endl;
     try {
         // can't truncate non-zero bits when it's safe
         [[maybe_unused]] x32s ff = e;
-        cout << "this line will not be reached: " << endl;
+        SHOW << "this line will not be reached: " << endl;
     }
     catch (overflow_error& e) {
-        cout << "22: truncation was prevented: " << e.what() << endl;
+        SHOW << "truncation was prevented: " << e.what() << endl;
     }
 
 
     // assignments
     a = 0;
     a += b;
-    cout << "23: a = " << a << endl;
+    SHOW << "a = " << info(a) << endl;
     a += 3;
-    cout << "24: a = " << a << endl;
+    SHOW << "a = " << info(a) << endl;
 
     a -= b;
-    cout << "25: a = " << a << endl;
+    SHOW << "a = " << info(a) << endl;
     a -= 1;
-    cout << "26: a = " << a << endl;
+    SHOW << "a = " << info(a) << endl;
 
     a *= b;
-    cout << "27: a = " << a << endl;
+    SHOW << "a = " << info(a) << endl;
     a *= 3;
-    cout << "28: a = " << a << endl;
+    SHOW << "a = " << info(a) << endl;
 
     a /= xint::uint(2);
-    cout << "29: a = " << a << endl;
+    SHOW << "a = " << info(a) << endl;
     a /= 7;
-    cout << "30: a = " << a << endl;
+    SHOW << "a = " << info(a) << endl;
 
     a %= 2;
-    cout << "31: a = " << a << endl;
+    SHOW << "a = " << info(a) << endl;
 
     a =  0b0101;
     b = x256{"0b1100"};
     a &= b;
-    cout << "32: a = 0b" << setw(4) << a.to_bin() << endl;
+    SHOW << "a = 0b" << setw(4) << a.to_bin() << endl;
 
     a = 0b0101;
     b = x256{"1100", 2};
     a |= b;
-    cout << "33: a = 0b" << setw(4) << a.to_bin() << endl;
+    SHOW << "a = 0b" << setw(4) << a.to_bin() << endl;
 
     a = 0b0101;
     b = 0b1100_uint;
     a ^= b;
-    cout << "34: a = 0b" << setw(4) << a.to_bin() << endl;
+    SHOW << "a = 0b" << setw(4) << a.to_bin() << endl;
 
 
 }

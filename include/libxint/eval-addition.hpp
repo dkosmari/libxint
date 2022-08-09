@@ -16,13 +16,10 @@ namespace xint {
      * TESTED
      * @return true if there's overflow
      */
-    template<limb_range Out,
-             limb_range A,
-             limb_range B>
     bool
-    eval_add(Out&& out,
-             const A& a,
-             const B& b,
+    eval_add(limb_range auto&& out,
+             const limb_range auto& a,
+             const limb_range auto& b,
              unsigned shift = 0)
         noexcept
     {
@@ -62,11 +59,9 @@ namespace xint {
 
     // a += b
     // returns true if there's overflow
-    template<limb_range A,
-             limb_range B>
     bool
-    eval_add_inplace(A&& a,
-                     const B& b) noexcept
+    eval_add_inplace(limb_range auto&& a,
+                     const limb_range auto& b) noexcept
     {
         using std::size;
         using std::empty;
@@ -96,9 +91,8 @@ namespace xint {
 
     // a += b (single limb)
     // returns true if there's overflow
-    template<limb_range A>
     bool
-    eval_add_inplace_limb(A&& a,
+    eval_add_inplace_limb(limb_range auto&& a,
                           limb_type b) noexcept
     {
         using std::empty;

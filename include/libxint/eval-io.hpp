@@ -8,15 +8,15 @@
 #include <ostream>
 
 #include "uint.hpp"
+#include "traits.hpp"
 
 
 namespace xint {
 
 
-    template<unsigned Bits, bool Safe>
     void
     eval_input_hex(std::istream& in,
-                   uint<Bits, Safe>& n)
+                   unsigned_integral auto& n)
     {
         using std::toupper;
         using std::isxdigit;
@@ -71,10 +71,10 @@ namespace xint {
     }
 
 
-    template<unsigned Bits, bool Safe>
+    template<unsigned_integral U>
     void
     eval_input(std::istream& in,
-               uint<Bits, Safe>& n)
+               U& n)
     {
         auto base = in.flags() & std::ios_base::basefield;
         switch (base) {
@@ -86,7 +86,7 @@ namespace xint {
                     // TODO
                     std::string arg;
                     in >> arg;
-                    n = uint<Bits, Safe>(arg, 8);
+                    n = U{arg, 8};
                 }
                 break;
             case std::ios_base::dec:
@@ -94,7 +94,7 @@ namespace xint {
                     // TODO
                     std::string arg;
                     in >> arg;
-                    n = uint<Bits, Safe>(arg, 10);
+                    n = U{arg, 10};
                 }
                 break;
             default:
@@ -102,16 +102,15 @@ namespace xint {
                     // TODO
                     std::string arg;
                     in >> arg;
-                    n = uint<Bits, Safe>(arg);
+                    n = U{arg};
                 }
         }
     }
 
 
-    template<unsigned Bits, bool Safe>
     void
     eval_output(std::ostream& out,
-                const uint<Bits, Safe>& n)
+                const unsigned_integral auto& n)
     {
         auto base = out.flags() & std::ios_base::basefield;
         switch (base) {
