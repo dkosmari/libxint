@@ -19,7 +19,6 @@ configure
 examples/basic
 examples/fibonacci
 examples/prime-test
-m4
 Makefile
 stamp-h1
 tests/addition
