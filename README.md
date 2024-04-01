@@ -35,24 +35,26 @@ First, include the header `libxint/uint.hpp` in your program.
 The type `xint::uint<B>` is now available; the template argument `B` is the number
 of desired bits. It can be used as any ordinary unsigned integer:
 
-      #include <iostream>
-      #include <libxint/uint.hpp>
+```cpp
+#include <iostream>
+#include <libxint/uint.hpp>
 
-      using namespace std;
-      using namespace xint::literals;
+using namespace std;
+using namespace xint::literals;
 
-      int main()
-      {
-          xint::uint<1024> x = 42;
-          cout << x << endl;
-          x <<= 1000;
-          cout << x << endl;
-          ++x;
-          cout << x << endl;
-          cout << popcount(x) << endl;
-          auto y = 0xdeadbeef0000babecafe0000dec0de_uint;
-          cout << hex << y << dec << " has " << y.num_bits << " bits." << endl;
-      }
+int main()
+{
+    xint::uint<1024> x = 42;
+    cout << x << endl;
+    x <<= 1000;
+    cout << x << endl;
+    ++x;
+    cout << x << endl;
+    cout << popcount(x) << endl;
+    auto y = 0xdeadbeef0000babecafe0000dec0de_uint;
+    cout << hex << y << dec << " has " << y.num_bits << " bits." << endl;
+}
+```
 
 
 Implementation details
