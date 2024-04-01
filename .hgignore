@@ -5,6 +5,7 @@ syntax: glob
 *.log
 *.o
 *.po
+*.tar.gz
 *.trs
 *~
 .deps
@@ -15,6 +16,19 @@ compile_flags.txt
 config.h
 config.status
 configure
+examples/basic
+examples/fibonacci
+examples/prime-test
 m4
 Makefile
 stamp-h1
+tests/addition
+tests/constructors
+tests/division
+tests/multiplication
+tests/prime
+tests/prime.py
+tests/serialization
+tests/shifting
+tests/stdlib
+tests/subtraction
